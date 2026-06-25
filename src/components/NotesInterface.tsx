@@ -11,9 +11,10 @@ interface Props {
   setNotes: React.Dispatch<React.SetStateAction<Note[]>>;
   onOpenLauncher: () => void;
   onOpenSettings: () => void;
+  onOpenCalendar: () => void;
 }
 
-export function NotesInterface({ lang, theme, notes, setNotes, onOpenLauncher, onOpenSettings }: Props) {
+export function NotesInterface({ lang, theme, notes, setNotes, onOpenLauncher, onOpenSettings, onOpenCalendar }: Props) {
   const t = translations[lang];
   
   const [editingNote, setEditingNote] = useState<Note | null>(null);
@@ -67,13 +68,22 @@ export function NotesInterface({ lang, theme, notes, setNotes, onOpenLauncher, o
             {t.notes}
           </h1>
         </div>
-        <button
-          onClick={onOpenSettings}
-          className="p-2 text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 rounded-full transition-all"
-          aria-label={t.settings}
-        >
-          <Settings className="w-6 h-6" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onOpenCalendar}
+            className="p-2 text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 rounded-full transition-all"
+            aria-label="Calendar"
+          >
+            📅
+          </button>
+          <button
+            onClick={onOpenSettings}
+            className="p-2 text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 rounded-full transition-all"
+            aria-label={t.settings}
+          >
+            <Settings className="w-6 h-6" />
+          </button>
+        </div>
       </header>
 
       <main className="flex-1 p-8 space-y-6">

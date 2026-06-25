@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Language } from '../types';
 import { translations } from '../i18n';
-import { X } from 'lucide-react';
+import { X, ArrowLeft, ArrowRight, ArrowDown, RotateCw, ChevronsDown } from 'lucide-react';
 
 interface Props {
   lang: Language;
@@ -87,24 +87,40 @@ export function TetrisGame({ lang, onExit }: Props) {
     }
   }, [piece, board, gameOver]);
 
+  const hardDrop = () => {
+    if (gameOver) return;
+    let newY = piece.y;
+    while (!checkCollision(piece.shape, piece.x, newY + 1)) {
+      newY++;
+    }
+    setPiece(p => ({ ...p, y: newY }));
+    // Force merge on next tick by running moveDown
+  };
+
+  const moveLeft = () => {
+    if (gameOver) return;
+    if (!checkCollision(piece.shape, piece.x - 1, piece.y)) setPiece(p => ({ ...p, x: p.x - 1 }));
+  };
+
+  const moveRight = () => {
+    if (gameOver) return;
+    if (!checkCollision(piece.shape, piece.x + 1, piece.y)) setPiece(p => ({ ...p, x: p.x + 1 }));
+  };
+
+  const rotate = () => {
+    if (gameOver) return;
+    const rotated = piece.shape[0].map((_, i) => piece.shape.map(row => row[i]).reverse());
+    if (!checkCollision(rotated, piece.x, piece.y)) setPiece(p => ({ ...p, shape: rotated }));
+  };
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (gameOver) return;
-      if (e.key === 'ArrowLeft' && !checkCollision(piece.shape, piece.x - 1, piece.y)) {
-        setPiece(p => ({ ...p, x: p.x - 1 }));
-      }
-      if (e.key === 'ArrowRight' && !checkCollision(piece.shape, piece.x + 1, piece.y)) {
-        setPiece(p => ({ ...p, x: p.x + 1 }));
-      }
-      if (e.key === 'ArrowDown') {
-        moveDown();
-      }
-      if (e.key === 'ArrowUp') {
-        const rotated = piece.shape[0].map((_, i) => piece.shape.map(row => row[i]).reverse());
-        if (!checkCollision(rotated, piece.x, piece.y)) {
-          setPiece(p => ({ ...p, shape: rotated }));
-        }
-      }
+      if (e.key === 'ArrowLeft') moveLeft();
+      if (e.key === 'ArrowRight') moveRight();
+      if (e.key === 'ArrowDown') moveDown();
+      if (e.key === 'ArrowUp') rotate();
+      if (e.key === ' ') hardDrop();
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
@@ -127,8 +143,8 @@ export function TetrisGame({ lang, onExit }: Props) {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center w-full h-full max-w-lg mx-auto p-6 text-white font-mono bg-black">
-      <div className="w-full flex justify-between items-center mb-6 border-b border-neutral-800 pb-4">
+    <div className="flex flex-col items-center justify-between w-full h-full max-w-lg mx-auto p-4 md:p-6 text-white font-mono bg-black">
+      <div className="w-full flex justify-between items-center mb-4 border-b border-neutral-800 pb-4">
         <h2 className="text-xl text-blue-400 font-bold">TETRIS</h2>
         <div className="text-neutral-400">Score: <span className="text-white font-bold">{score}</span></div>
         <button onClick={onExit} className="p-2 bg-neutral-800 hover:bg-neutral-700 rounded-lg text-neutral-400 hover:text-white">
@@ -136,7 +152,7 @@ export function TetrisGame({ lang, onExit }: Props) {
         </button>
       </div>
 
-      <div className="bg-neutral-900 border-4 border-neutral-800 p-2 rounded-lg relative">
+      <div className="bg-neutral-900 border-4 border-neutral-800 p-2 rounded-lg relative mb-4 shadow-[0_0_30px_rgba(0,0,0,0.8)]">
         {gameOver && (
           <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center z-10">
             <h3 className="text-red-500 font-bold text-2xl mb-2">GAME OVER</h3>
@@ -154,16 +170,33 @@ export function TetrisGame({ lang, onExit }: Props) {
             {row.map((cell, x) => (
               <div 
                 key={`${y}-${x}`} 
-                className={`w-6 h-6 border-[0.5px] border-neutral-900/50 ${cell === 2 ? 'bg-blue-500 shadow-[0_0_10px_blue]' : cell === 1 ? 'bg-neutral-500' : 'bg-neutral-800'}`}
+                className={`w-5 h-5 sm:w-6 sm:h-6 border-[0.5px] border-neutral-900/50 ${cell === 2 ? 'bg-blue-500 shadow-[0_0_10px_blue]' : cell === 1 ? 'bg-neutral-500' : 'bg-neutral-800'}`}
               />
             ))}
           </div>
         ))}
       </div>
 
-      <div className="mt-8 text-center text-neutral-500 text-xs uppercase tracking-widest space-y-2">
-        <p>Use Arrow Keys to Move & Rotate</p>
-        <p>Up to Rotate &bull; Down to Drop Faster</p>
+      {/* On-Screen Touch Controls */}
+      <div className="w-full max-w-[300px] grid grid-cols-3 gap-3 mb-6 touch-manipulation">
+        <button onClick={moveLeft} className="p-4 bg-neutral-800 hover:bg-neutral-700 rounded-2xl flex items-center justify-center active:scale-95 transition-transform shadow-lg border border-neutral-700">
+          <ArrowLeft className="w-8 h-8 text-neutral-300" />
+        </button>
+        <button onClick={rotate} className="p-4 bg-blue-600/20 hover:bg-blue-600/40 rounded-2xl flex items-center justify-center active:scale-95 transition-transform shadow-lg border border-blue-500/50">
+          <RotateCw className="w-8 h-8 text-blue-400" />
+        </button>
+        <button onClick={moveRight} className="p-4 bg-neutral-800 hover:bg-neutral-700 rounded-2xl flex items-center justify-center active:scale-95 transition-transform shadow-lg border border-neutral-700">
+          <ArrowRight className="w-8 h-8 text-neutral-300" />
+        </button>
+        
+        <div className="col-span-3 grid grid-cols-2 gap-3 mt-1">
+          <button onClick={moveDown} className="p-4 bg-neutral-800 hover:bg-neutral-700 rounded-2xl flex items-center justify-center active:scale-95 transition-transform shadow-lg border border-neutral-700">
+            <ArrowDown className="w-8 h-8 text-neutral-300" />
+          </button>
+          <button onClick={hardDrop} className="p-4 bg-red-500/20 hover:bg-red-500/40 rounded-2xl flex items-center justify-center active:scale-95 transition-transform shadow-lg border border-red-500/50">
+            <ChevronsDown className="w-8 h-8 text-red-400" />
+          </button>
+        </div>
       </div>
     </div>
   );

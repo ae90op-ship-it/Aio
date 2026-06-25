@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Language, ThemeMode } from '../types';
 import { getAppById } from '../data';
 import { translations } from '../i18n';
-import { ArrowRight, Settings } from 'lucide-react';
+import { ArrowRight, Settings, Copy, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -24,6 +24,7 @@ export function SimulatedApp({ appId, lang, theme, onBackToNotes, onOpenLauncher
   const [inputData, setInputData] = useState('');
   const [outputData, setOutputData] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   if (!app) return null;
 
@@ -33,6 +34,7 @@ export function SimulatedApp({ appId, lang, theme, onBackToNotes, onOpenLauncher
   const handleSimulate = () => {
     if (!inputData.trim()) return;
     setIsProcessing(true);
+    setCopied(false);
     
     setTimeout(() => {
       setIsProcessing(false);
@@ -48,6 +50,12 @@ export function SimulatedApp({ appId, lang, theme, onBackToNotes, onOpenLauncher
         setOutputData(`### Simulated Output: ${app.name[lang]}\n\n**Processed Input:**\n\n${inputData}\n\n---\n\n*Status: SUCCESS*\n\n*Time: ${new Date().toLocaleTimeString()}*`);
       }
     }, 800);
+  };
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(outputData);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
@@ -121,12 +129,21 @@ export function SimulatedApp({ appId, lang, theme, onBackToNotes, onOpenLauncher
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-white dark:bg-neutral-900 border border-blue-500/30 rounded-2xl p-6 shadow-sm dark:shadow-[0_0_30px_rgba(37,99,235,0.1)]"
+                className="bg-white dark:bg-neutral-900 border border-blue-500/30 rounded-2xl p-6 shadow-sm dark:shadow-[0_0_30px_rgba(37,99,235,0.1)] relative group"
               >
-                <h3 className="text-blue-500 dark:text-blue-400 font-semibold mb-4 flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
-                  {t.output}
-                </h3>
+                <div className="flex justify-between items-start mb-4">
+                  <h3 className="text-blue-500 dark:text-blue-400 font-semibold flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+                    {t.output}
+                  </h3>
+                  <button 
+                    onClick={handleCopy}
+                    className="p-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700 hover:text-blue-500 transition-colors flex items-center gap-2 text-sm"
+                  >
+                    {copied ? <CheckCircle2 className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                    {copied && <span className="text-green-500 text-xs font-medium">Copied!</span>}
+                  </button>
+                </div>
                 <div className="prose prose-sm dark:prose-invert max-w-none text-neutral-700 dark:text-neutral-300" dir="ltr">
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>{outputData}</ReactMarkdown>
                 </div>

@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'motion/react';
 interface Props {
   lang: Language;
   theme: ThemeMode;
+  version: string;
   isOpen: boolean;
   onClose: () => void;
   onChangeLanguage: (lang: Language) => void;
@@ -14,7 +15,7 @@ interface Props {
   onSecretCode: (code: string) => void;
 }
 
-export function SettingsModal({ lang, theme, isOpen, onClose, onChangeLanguage, onChangeTheme, onSecretCode }: Props) {
+export function SettingsModal({ lang, theme, version, isOpen, onClose, onChangeLanguage, onChangeTheme, onSecretCode }: Props) {
   const t = translations[lang];
   const [secretCode, setSecretCode] = useState('');
 
@@ -113,7 +114,7 @@ export function SettingsModal({ lang, theme, isOpen, onClose, onChangeLanguage, 
               </div>
 
               <div className="text-center pt-4 border-t border-neutral-300 dark:border-neutral-700">
-                <p className="text-neutral-400 dark:text-neutral-500 text-xs font-mono">{t.appVersion}: v1.0.0</p>
+                <p className="text-neutral-400 dark:text-neutral-500 text-xs font-mono">{t.appVersion}: {version}</p>
               </div>
             </div>
           </motion.div>

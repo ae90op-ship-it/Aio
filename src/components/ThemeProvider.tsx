@@ -1,5 +1,5 @@
 import React from 'react';
-import { Language } from '../types';
+import { Language, ThemeMode } from '../types';
 
 interface Props {
   lang: Language;
