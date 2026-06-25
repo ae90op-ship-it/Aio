@@ -1,0 +1,6 @@
+{
+  "name": "OmniNotes Core Engine",
+  "description": "An interactive application simulator featuring a primary Notes interface and a 20-app ecosystem with selectable UI themes.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
