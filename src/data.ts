@@ -17,13 +17,6 @@ export const APPS: AppData[] = [
     description: { ar: 'فحص الخصوصية، قوة كلمة المرور، نصائح أمنية.', en: 'Privacy checker, password strength, security tips.', ja: 'プライバシーチェック、パスワード強度、セキュリティのヒント。' } 
   },
   { 
-    id: 'calendar', 
-    name: { ar: 'التقويم', en: 'Calendar', ja: 'カレンダー' }, 
-    category: 'SYSTEM & UTILITIES', 
-    icon: 'Calendar', 
-    description: { ar: 'إضافة أحداث، جدولة باللغة الطبيعية، تذكيرات.', en: 'Add events, natural language scheduling, reminders.', ja: 'イベントの追加、自然言語でのスケジュール設定、リマインダー。' } 
-  },
-  { 
     id: 'compass', 
     name: { ar: 'البوصلة', en: 'Compass', ja: 'コンパス' }, 
     category: 'SYSTEM & UTILITIES', 
@@ -32,7 +25,7 @@ export const APPS: AppData[] = [
   },
   { 
     id: 'calculator', 
-    name: { ar: 'الآلة الحاسبة & 991EX', en: 'Calculator & 991EX', ja: '電卓 & 991EX' }, 
+    name: { ar: 'الآلة الحاسبة', en: 'Calculator', ja: '電卓' }, 
     category: 'SYSTEM & UTILITIES', 
     icon: 'Calculator', 
     description: { ar: 'معادلات أساسية وحلال مصفوفات/تفاضل وتكامل علمي متقدم.', en: 'Basic equations and advanced scientific matrix/calculus solver.', ja: '基本方程式と高度な科学的行列/微積分ソルバー。' } 

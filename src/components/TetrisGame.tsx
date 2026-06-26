@@ -26,6 +26,7 @@ export function TetrisGame({ lang, onExit }: Props) {
   const [board, setBoard] = useState<number[][]>(Array.from({ length: BOARD_HEIGHT }, () => Array(BOARD_WIDTH).fill(0)));
   const [score, setScore] = useState(0);
   const [gameOver, setGameOver] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   
   const [piece, setPiece] = useState({ shape: TETROMINOS[0], x: 3, y: 0 });
 
@@ -79,16 +80,16 @@ export function TetrisGame({ lang, onExit }: Props) {
   };
 
   const moveDown = useCallback(() => {
-    if (gameOver) return;
+    if (gameOver || isPaused) return;
     if (!checkCollision(piece.shape, piece.x, piece.y + 1)) {
       setPiece(p => ({ ...p, y: p.y + 1 }));
     } else {
       mergePiece();
     }
-  }, [piece, board, gameOver]);
+  }, [piece, board, gameOver, isPaused]);
 
   const hardDrop = () => {
-    if (gameOver) return;
+    if (gameOver || isPaused) return;
     let newY = piece.y;
     while (!checkCollision(piece.shape, piece.x, newY + 1)) {
       newY++;
@@ -98,24 +99,32 @@ export function TetrisGame({ lang, onExit }: Props) {
   };
 
   const moveLeft = () => {
-    if (gameOver) return;
+    if (gameOver || isPaused) return;
     if (!checkCollision(piece.shape, piece.x - 1, piece.y)) setPiece(p => ({ ...p, x: p.x - 1 }));
   };
 
   const moveRight = () => {
-    if (gameOver) return;
+    if (gameOver || isPaused) return;
     if (!checkCollision(piece.shape, piece.x + 1, piece.y)) setPiece(p => ({ ...p, x: p.x + 1 }));
   };
 
   const rotate = () => {
-    if (gameOver) return;
+    if (gameOver || isPaused) return;
     const rotated = piece.shape[0].map((_, i) => piece.shape.map(row => row[i]).reverse());
     if (!checkCollision(rotated, piece.x, piece.y)) setPiece(p => ({ ...p, shape: rotated }));
+  };
+
+  const togglePause = () => {
+    if (!gameOver) {
+      setIsPaused(p => !p);
+    }
   };
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (gameOver) return;
+      if (e.key === 'Escape') togglePause();
+      if (isPaused) return;
       if (e.key === 'ArrowLeft') moveLeft();
       if (e.key === 'ArrowRight') moveRight();
       if (e.key === 'ArrowDown') moveDown();
@@ -124,7 +133,7 @@ export function TetrisGame({ lang, onExit }: Props) {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [piece, board, gameOver, moveDown]);
+  }, [piece, board, gameOver, moveDown, isPaused]);
 
   useEffect(() => {
     const timer = setInterval(moveDown, 500);
@@ -147,12 +156,29 @@ export function TetrisGame({ lang, onExit }: Props) {
       <div className="w-full flex justify-between items-center mb-4 border-b border-neutral-800 pb-4">
         <h2 className="text-xl text-blue-400 font-bold">TETRIS</h2>
         <div className="text-neutral-400">Score: <span className="text-white font-bold">{score}</span></div>
-        <button onClick={onExit} className="p-2 bg-neutral-800 hover:bg-neutral-700 rounded-lg text-neutral-400 hover:text-white">
-          <X className="w-5 h-5" />
-        </button>
+        <div className="flex gap-2">
+          <button onClick={togglePause} className="px-3 py-1 bg-neutral-800 hover:bg-neutral-700 rounded-lg text-neutral-400 hover:text-white text-sm">
+            {isPaused ? 'Resume' : 'Pause'}
+          </button>
+          <button onClick={onExit} className="p-2 bg-neutral-800 hover:bg-neutral-700 rounded-lg text-neutral-400 hover:text-white">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
       </div>
 
       <div className="bg-neutral-900 border-4 border-neutral-800 p-2 rounded-lg relative mb-4 shadow-[0_0_30px_rgba(0,0,0,0.8)]">
+        {isPaused && !gameOver && (
+          <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center z-10">
+            <h3 className="text-2xl text-blue-400 font-bold mb-4">PAUSED</h3>
+            <button 
+              onClick={togglePause}
+              className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-bold"
+            >
+              Resume
+            </button>
+          </div>
+        )}
+
         {gameOver && (
           <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center z-10">
             <h3 className="text-red-500 font-bold text-2xl mb-2">GAME OVER</h3>

@@ -8,12 +8,25 @@ import { SettingsModal } from './components/SettingsModal';
 import { TetrisGame } from './components/TetrisGame';
 import { TicTacToeGame } from './components/TicTacToeGame';
 import { ClockApp } from './components/ClockApp';
+import { CalculatorApp } from './components/CalculatorApp';
+import { SecretNotesInterface } from './components/SecretNotesInterface';
+import { ReactionGame } from './components/ReactionGame';
+import { EvolutionGame } from './components/EvolutionGame';
 import { CalendarModal } from './components/CalendarModal';
 import { AnimatePresence, motion } from 'motion/react';
 import { X } from 'lucide-react';
 
-type AppState = 'MAIN_NOTES' | 'APP_OPEN' | 'TETRIS' | 'XO_GAME' | 'CLOCK_OPEN';
+type AppState = 'MAIN_NOTES' | 'APP_OPEN' | 'TETRIS' | 'XO_GAME' | 'CLOCK_OPEN' | 'CALCULATOR_OPEN' | 'SECRET_NOTES' | 'REACTION_GAME' | 'EVOLUTION_GAME';
 type AppVersion = { x: number; y: number; z: number };
+
+const convertArabicNumbers = (str: string) => {
+  const arabicNumbers = [/٠/g, /١/g, /٢/g, /٣/g, /٤/g, /٥/g, /٦/g, /٧/g, /٨/g, /٩/g];
+  let res = str;
+  for (let i = 0; i < 10; i++) {
+    res = res.replace(arabicNumbers[i], i.toString());
+  }
+  return res;
+};
 
 export default function App() {
   const [appState, setAppState] = useState<AppState>('MAIN_NOTES');
@@ -62,6 +75,8 @@ export default function App() {
   const handleOpenApp = (appId: string) => {
     if (appId === 'clock') {
       setAppState('CLOCK_OPEN');
+    } else if (appId === 'calculator') {
+      setAppState('CALCULATOR_OPEN');
     } else {
       setActiveAppId(appId);
       setAppState('APP_OPEN');
@@ -73,12 +88,22 @@ export default function App() {
     setActiveAppId(null);
   };
 
-  const handleSecretCode = (code: string) => {
+  const handleSecretCode = (rawCode: string) => {
+    const code = convertArabicNumbers(rawCode);
     if (code === '1111') {
       setAppState('TETRIS');
       setIsSettingsOpen(false);
     } else if (code === '2222') {
       setAppState('XO_GAME');
+      setIsSettingsOpen(false);
+    } else if (code === '1122') {
+      setAppState('SECRET_NOTES');
+      setIsSettingsOpen(false);
+    } else if (code === '3333') {
+      setAppState('REACTION_GAME');
+      setIsSettingsOpen(false);
+    } else if (code === '4444') {
+      setAppState('EVOLUTION_GAME');
       setIsSettingsOpen(false);
     } else if (code === '0000') {
       setShowSecretCodesInfo(true);
@@ -177,6 +202,58 @@ export default function App() {
             <TicTacToeGame lang={lang} onExit={handleBackToNotes} />
           </motion.div>
         )}
+
+        {appState === 'CALCULATOR_OPEN' && (
+          <motion.div
+            key="calculator"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+            className="w-full h-full flex-1 flex flex-col"
+          >
+            <CalculatorApp lang={lang} theme={theme} onBack={handleBackToNotes} />
+          </motion.div>
+        )}
+
+        {appState === 'SECRET_NOTES' && (
+          <motion.div
+            key="secretnotes"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+            className="w-full h-full flex-1 flex flex-col"
+          >
+            <SecretNotesInterface lang={lang} theme={theme} onBack={handleBackToNotes} />
+          </motion.div>
+        )}
+
+        {appState === 'REACTION_GAME' && (
+          <motion.div
+            key="reaction"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+            className="w-full h-full flex-1 flex flex-col items-center justify-center bg-neutral-100 dark:bg-neutral-900"
+          >
+            <ReactionGame lang={lang} onExit={handleBackToNotes} />
+          </motion.div>
+        )}
+
+        {appState === 'EVOLUTION_GAME' && (
+          <motion.div
+            key="evolution"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+            className="w-full h-full flex-1 flex flex-col items-center justify-center bg-neutral-100 dark:bg-neutral-900"
+          >
+            <EvolutionGame lang={lang} onExit={handleBackToNotes} />
+          </motion.div>
+        )}
       </AnimatePresence>
 
       <AppLauncher 
@@ -217,15 +294,27 @@ export default function App() {
               </div>
               <ul className="space-y-4 text-neutral-700 dark:text-neutral-300">
                 <li className="flex justify-between items-center bg-neutral-100 dark:bg-neutral-900 p-3 rounded-xl border border-neutral-200 dark:border-neutral-700">
-                  <span className="font-mono font-bold text-blue-500">1111</span>
+                  <span className="font-mono font-bold text-blue-500">1111 أو ١١١١</span>
                   <span className="text-sm">Tetris Game</span>
                 </li>
                 <li className="flex justify-between items-center bg-neutral-100 dark:bg-neutral-900 p-3 rounded-xl border border-neutral-200 dark:border-neutral-700">
-                  <span className="font-mono font-bold text-blue-500">2222</span>
+                  <span className="font-mono font-bold text-blue-500">1122 أو ١١٢٢</span>
+                  <span className="text-sm">Secret Notes</span>
+                </li>
+                <li className="flex justify-between items-center bg-neutral-100 dark:bg-neutral-900 p-3 rounded-xl border border-neutral-200 dark:border-neutral-700">
+                  <span className="font-mono font-bold text-blue-500">2222 أو ٢٢٢٢</span>
                   <span className="text-sm">Tic-Tac-Toe (XO)</span>
                 </li>
                 <li className="flex justify-between items-center bg-neutral-100 dark:bg-neutral-900 p-3 rounded-xl border border-neutral-200 dark:border-neutral-700">
-                  <span className="font-mono font-bold text-blue-500">0000</span>
+                  <span className="font-mono font-bold text-blue-500">3333 أو ٣٣٣٣</span>
+                  <span className="text-sm">Reaction Time Game</span>
+                </li>
+                <li className="flex justify-between items-center bg-neutral-100 dark:bg-neutral-900 p-3 rounded-xl border border-neutral-200 dark:border-neutral-700">
+                  <span className="font-mono font-bold text-blue-500">4444 أو ٤٤٤٤</span>
+                  <span className="text-sm">Infinite Evolution</span>
+                </li>
+                <li className="flex justify-between items-center bg-neutral-100 dark:bg-neutral-900 p-3 rounded-xl border border-neutral-200 dark:border-neutral-700">
+                  <span className="font-mono font-bold text-blue-500">0000 أو ٠٠٠٠</span>
                   <span className="text-sm">Secret Codes List</span>
                 </li>
               </ul>
