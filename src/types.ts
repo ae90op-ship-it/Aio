@@ -1,7 +1,11 @@
-export type Language = 'ar' | 'en' | 'ja';
-export type ThemeMode = 'light' | 'dark';
+export type Language = "ar" | "en" | "ja";
+export type ThemeMode = "light" | "dark" | "ocean" | "forest" | "sunset";
 
-export type AppCategory = 'SYSTEM & UTILITIES' | 'PRODUCTIVITY & OFFICE' | 'MEDIA & SCANNING' | 'NETWORK & PASSWORDS';
+export type AppCategory =
+  | "SYSTEM & UTILITIES"
+  | "PRODUCTIVITY & OFFICE"
+  | "MEDIA & SCANNING"
+  | "NETWORK & PASSWORDS";
 
 export interface AppData {
   id: string;
@@ -17,5 +21,11 @@ export interface Note {
   content: string;
   date: string;
   updatedAt: number;
+  isPinned?: boolean;
+  appId?: string;
+  appData?: any;
 }
 
+export interface TrashedNote extends Note {
+  deletedAt: number;
+}
