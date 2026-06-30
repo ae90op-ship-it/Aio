@@ -70,9 +70,9 @@ export function DrawingApp({ lang, onBack, initialData, onSaveNote }: Props) {
       // Center the view initially
       if (containerRef.current) {
         containerRef.current.scrollTop =
-          1500 - containerRef.current.clientHeight / 2;
+          5000 - containerRef.current.clientHeight / 2;
         containerRef.current.scrollLeft =
-          1500 - containerRef.current.clientWidth / 2;
+          5000 - containerRef.current.clientWidth / 2;
       }
     }
   }, [initialData]);
@@ -260,29 +260,21 @@ export function DrawingApp({ lang, onBack, initialData, onSaveNote }: Props) {
 
   return (
     <div className="flex flex-col h-full bg-white dark:bg-neutral-900 w-full relative">
-      <header className="p-4 flex items-center justify-between border-b border-neutral-200 dark:border-neutral-800">
-        <button
-          onClick={onBack}
-          className="p-2 bg-neutral-100 dark:bg-neutral-800 rounded-full text-neutral-600 dark:text-neutral-300"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        {onSaveNote && (
+      <header className="p-4 flex flex-wrap gap-4 items-center justify-between border-b border-neutral-200 dark:border-neutral-800">
+        <div className="flex items-center gap-3">
           <button
-            onClick={saveToNote}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+            onClick={onBack}
+            className="p-2 bg-neutral-100 dark:bg-neutral-800 rounded-full text-neutral-600 dark:text-neutral-300"
           >
-            <Save className="w-4 h-4" />
-            <span className="hidden sm:inline">
-              {lang === "ar" ? "حفظ كملاحظة" : "Save as Note"}
-            </span>
+            <ArrowLeft className="w-5 h-5" />
           </button>
-        )}
-        <h2 className="text-lg font-bold text-neutral-900 dark:text-white">
-          {lang === "ar" ? "برنامج الرسم" : "Drawing"}
-        </h2>
-        <div className="flex gap-2">
-          <div className="flex bg-neutral-100 dark:bg-neutral-800 rounded-lg overflow-hidden border border-neutral-200 dark:border-neutral-700 mr-2">
+          <h2 className="text-lg font-bold text-neutral-900 dark:text-white hidden sm:block">
+            {lang === "ar" ? "برنامج الرسم" : "Drawing"}
+          </h2>
+        </div>
+        
+        <div className="flex flex-wrap gap-2 items-center justify-center flex-1">
+          <div className="flex bg-neutral-100 dark:bg-neutral-800 rounded-lg overflow-hidden border border-neutral-200 dark:border-neutral-700 shadow-sm">
             <button
               onClick={() => setTool("draw")}
               className={`p-2 transition-colors ${tool === "draw" ? "bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400" : "text-neutral-500 hover:bg-neutral-200 dark:hover:bg-neutral-700"}`}
@@ -302,7 +294,7 @@ export function DrawingApp({ lang, onBack, initialData, onSaveNote }: Props) {
               className={`p-2 transition-colors ${tool === "shape" ? "bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400" : "text-neutral-500 hover:bg-neutral-200 dark:hover:bg-neutral-700"}`}
               title={lang === "ar" ? "أشكال" : "Shapes"}
             >
-              <div className="w-5 h-5 border-2 border-current rounded-sm" />
+              <div className="w-4 h-4 border-2 border-current rounded-sm" />
             </button>
             <button
               onClick={() => setTool("pan")}
@@ -313,21 +305,34 @@ export function DrawingApp({ lang, onBack, initialData, onSaveNote }: Props) {
             </button>
           </div>
           
-          <div className="flex bg-neutral-100 dark:bg-neutral-800 rounded-lg overflow-hidden border border-neutral-200 dark:border-neutral-700 mr-2 items-center px-2">
-            <button onClick={() => setZoom(z => Math.max(0.1, z - 0.1))} className="p-1 text-neutral-500 hover:text-neutral-900 dark:hover:text-white">-</button>
+          <div className="flex bg-neutral-100 dark:bg-neutral-800 rounded-lg overflow-hidden border border-neutral-200 dark:border-neutral-700 items-center px-1 shadow-sm">
+            <button onClick={() => setZoom(z => Math.max(0.1, z - 0.1))} className="p-2 text-neutral-500 hover:text-neutral-900 dark:hover:text-white font-bold text-lg leading-none">-</button>
             <span className="text-xs font-mono w-10 text-center text-neutral-700 dark:text-neutral-300">{Math.round(zoom * 100)}%</span>
-            <button onClick={() => setZoom(z => Math.min(5, z + 0.1))} className="p-1 text-neutral-500 hover:text-neutral-900 dark:hover:text-white">+</button>
+            <button onClick={() => setZoom(z => Math.min(5, z + 0.1))} className="p-2 text-neutral-500 hover:text-neutral-900 dark:hover:text-white font-bold text-lg leading-none">+</button>
           </div>
+        </div>
 
+        <div className="flex items-center gap-2">
+          {onSaveNote && (
+            <button
+              onClick={saveToNote}
+              className="flex items-center gap-2 p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-sm"
+              title={lang === "ar" ? "حفظ كملاحظة" : "Save as Note"}
+            >
+              <Save className="w-5 h-5" />
+            </button>
+          )}
           <button
             onClick={downloadCanvas}
-            className="p-2 text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 rounded-full"
+            className="p-2 text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 rounded-full hover:bg-neutral-200 dark:hover:bg-neutral-700"
+            title={lang === "ar" ? "تحميل" : "Download"}
           >
             <Download className="w-5 h-5" />
           </button>
           <button
             onClick={clearCanvas}
-            className="p-2 text-red-500 bg-red-100 dark:bg-red-900/30 rounded-full"
+            className="p-2 text-red-500 bg-red-100 dark:bg-red-900/30 rounded-full hover:bg-red-200 dark:hover:bg-red-900/50"
+            title={lang === "ar" ? "مسح" : "Clear"}
           >
             <Eraser className="w-5 h-5" />
           </button>
@@ -371,10 +376,10 @@ export function DrawingApp({ lang, onBack, initialData, onSaveNote }: Props) {
         <div className="min-w-max min-h-max p-10" style={{ transform: `scale(${zoom})`, transformOrigin: "0 0" }}>
           <canvas
             ref={canvasRef}
-            width={3000}
-            height={3000}
+            width={10000}
+            height={10000}
             className={`bg-white shadow-xl ${tool === "pan" ? "cursor-grab active:cursor-grabbing" : "cursor-crosshair"} touch-none`}
-            style={{ width: "3000px", height: "3000px" }}
+            style={{ width: "10000px", height: "10000px" }}
             onMouseDown={startAction}
             onMouseUp={stopAction}
             onMouseOut={stopAction}

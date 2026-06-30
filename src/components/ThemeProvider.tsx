@@ -10,10 +10,7 @@ interface Props {
 export function ThemeProvider({ lang, theme, children }: Props) {
   const dir = lang === "ar" ? "rtl" : "ltr";
 
-  let themeClasses = `theme-${theme}`;
-  if (theme !== "light") {
-    themeClasses += " dark";
-  }
+  const themeClasses = theme === "dark" ? "dark" : "";
 
   return (
     <div

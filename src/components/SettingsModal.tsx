@@ -26,6 +26,7 @@ interface Props {
   onChangeLanguage: (lang: Language) => void;
   onChangeTheme: (theme: ThemeMode) => void;
   onSecretCode: (code: string) => void;
+  version?: string;
 }
 
 export function SettingsModal({
@@ -40,6 +41,7 @@ export function SettingsModal({
   onChangeLanguage,
   onChangeTheme,
   onSecretCode,
+  version,
 }: Props) {
   const t = translations[lang];
   const [secretCode, setSecretCode] = useState("");
@@ -216,24 +218,6 @@ export function SettingsModal({
                       >
                         <Moon className="w-5 h-5" />
                       </button>
-                      <button
-                        onClick={() => onChangeTheme("ocean")}
-                        className={`flex-1 p-3 flex justify-center items-center gap-2 rounded-xl transition-all ${theme === "ocean" ? "bg-blue-500/20 border border-blue-500/50 text-blue-400" : "bg-white dark:bg-neutral-700/50 text-neutral-800 dark:text-neutral-200 border border-neutral-200 dark:border-transparent"}`}
-                      >
-                        <Droplets className="w-5 h-5" />
-                      </button>
-                      <button
-                        onClick={() => onChangeTheme("forest")}
-                        className={`flex-1 p-3 flex justify-center items-center gap-2 rounded-xl transition-all ${theme === "forest" ? "bg-blue-500/20 border border-blue-500/50 text-blue-400" : "bg-white dark:bg-neutral-700/50 text-neutral-800 dark:text-neutral-200 border border-neutral-200 dark:border-transparent"}`}
-                      >
-                        <TreePine className="w-5 h-5" />
-                      </button>
-                      <button
-                        onClick={() => onChangeTheme("sunset")}
-                        className={`flex-1 p-3 flex justify-center items-center gap-2 rounded-xl transition-all ${theme === "sunset" ? "bg-blue-500/20 border border-blue-500/50 text-blue-400" : "bg-white dark:bg-neutral-700/50 text-neutral-800 dark:text-neutral-200 border border-neutral-200 dark:border-transparent"}`}
-                      >
-                        <Sunset className="w-5 h-5" />
-                      </button>
                     </div>
                   </div>
 
@@ -255,9 +239,20 @@ export function SettingsModal({
                   </div>
 
                   <div>
-                    <p className="text-neutral-500 dark:text-neutral-400 text-sm mb-3">
-                      {t.secretCode}
-                    </p>
+                    <div className="flex justify-between items-end mb-3">
+                      <p className="text-neutral-500 dark:text-neutral-400 text-sm">
+                        {t.secretCode}
+                      </p>
+                      <button
+                        onClick={() => {
+                          onSecretCode("010");
+                          onClose();
+                        }}
+                        className="text-xs text-blue-500 hover:text-blue-600 underline"
+                      >
+                        {lang === "ar" ? "عرض الأكواد السرية" : "Show Secret Codes"}
+                      </button>
+                    </div>
                     <form onSubmit={handleSecretSubmit} className="flex gap-2">
                       <input
                         type="password"
@@ -275,6 +270,12 @@ export function SettingsModal({
                       </button>
                     </form>
                   </div>
+
+                  {version && (
+                    <div className="text-center mt-6">
+                      <p className="text-xs text-neutral-400 font-mono">{version}</p>
+                    </div>
+                  )}
                 </>
               )}
             </div>

@@ -38,6 +38,21 @@ type AppState =
   | "AUDIOEDITOR_OPEN"
   | "TEXTNOTE_OPEN"
   | "SECRET_NOTES";
+export type AppId =
+  | "clock"
+  | "calculator"
+  | "drawing"
+  | "compass"
+  | "passwords"
+  | "spreadsheets"
+  | "electron"
+  | "imageresizer"
+  | "gallery"
+  | "videoplayer"
+  | "videoeditor"
+  | "audioeditor"
+  | "notes";
+
 type AppVersion = { x: number; y: number; z: number };
 
 const convertArabicNumbers = (str: string) => {
@@ -64,7 +79,7 @@ export default function App() {
   const [appState, setAppState] = useState<AppState>("MAIN_NOTES");
   const [lang, setLang] = useState<Language>("ar");
   const [theme, setTheme] = useState<ThemeMode>("dark");
-  const [activeNoteData, setActiveNoteData] = useState<any>(null);
+  const [activeNoteData, setActiveNoteData] = useState<Record<string, unknown> | null>(null);
   const [activeNoteId, setActiveNoteId] = useState<string | null>(null);
 
   const [isLauncherOpen, setIsLauncherOpen] = useState(false);
@@ -72,8 +87,11 @@ export default function App() {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [showSecretCodesInfo, setShowSecretCodesInfo] = useState(false);
 
-  const [activeAppId, setActiveAppId] = useState<string | null>(null);
-  const [notes, setNotes] = useState<Note[]>([]);
+  const [activeAppId, setActiveAppId] = useState<AppId | null>(null);
+  const [notes, setNotes] = useState<Note[]>(() => {
+    const saved = localStorage.getItem("notes");
+    return saved ? JSON.parse(saved) : [];
+  });
   const [trashedNotes, setTrashedNotes] = useState<TrashedNote[]>(() => {
     const saved = localStorage.getItem("trashedNotes");
     return saved ? JSON.parse(saved) : [];
@@ -82,6 +100,10 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem("trashedNotes", JSON.stringify(trashedNotes));
   }, [trashedNotes]);
+
+  useEffect(() => {
+    localStorage.setItem("notes", JSON.stringify(notes));
+  }, [notes]);
 
   const [version, setVersion] = useState<AppVersion>({ x: 1, y: 0, z: 0 });
 
@@ -106,7 +128,6 @@ export default function App() {
   const handleCloseLauncher = () => setIsLauncherOpen(false);
 
   const handleOpenSettings = () => {
-    incrementVersion();
     setIsSettingsOpen(true);
   };
   const handleCloseSettings = () => setIsSettingsOpen(false);
@@ -114,7 +135,11 @@ export default function App() {
   const handleOpenCalendar = () => setIsCalendarOpen(true);
   const handleCloseCalendar = () => setIsCalendarOpen(false);
 
-  const handleOpenApp = (appId: string) => {
+  const handleOpenApp = (appIdStr: string) => {
+    const appId = appIdStr as AppId;
+    setActiveAppId(appId);
+    setIsLauncherOpen(false);
+    
     if (appId === "clock") {
       setAppState("CLOCK_OPEN");
     } else if (appId === "calculator") {
@@ -151,12 +176,14 @@ export default function App() {
     setActiveNoteId(null);
   };
 
-  const handleSaveAppNote = (title: string, data: any, appId: string) => {
+  const handleSaveAppNote = (title: string, data: unknown, appId: AppId) => {
+    incrementVersion();
     let noteData;
     if (appId === "notes") {
+      const notePayload = data as Record<string, string> | null;
       noteData = {
-        title: data.title || title,
-        content: data.content || "",
+        title: notePayload?.title || title,
+        content: notePayload?.content || "",
         date: new Date().toLocaleDateString(
           lang === "ar" ? "ar-EG" : lang === "ja" ? "ja-JP" : "en-US",
         ),
@@ -205,9 +232,9 @@ export default function App() {
       return;
     }
     
-    setActiveNoteData(note.appData);
+    setActiveNoteData(note.appData as Record<string, unknown> | null);
     
-    switch (note.appId) {
+    switch (note.appId as AppId) {
       case "spreadsheets": setAppState("SPREADSHEETS_OPEN"); break;
       case "drawing": setAppState("DRAWING_OPEN"); break;
       case "clock": setAppState("CLOCK_OPEN"); break;
@@ -221,8 +248,6 @@ export default function App() {
       case "videoeditor": setAppState("VIDEOEDITOR_OPEN"); break;
       case "audioeditor": setAppState("AUDIOEDITOR_OPEN"); break;
       default:
-        setActiveAppId(note.appId);
-        setAppState("APP_OPEN");
         break;
     }
   };
@@ -234,15 +259,13 @@ export default function App() {
   };
 
   const handleSecretCode = (rawCode: string) => {
-    // Secret codes removed as per instructions
-  };
-
-  // Trigger version increment on notes change
-  useEffect(() => {
-    if (notes.length > 0) {
-      incrementVersion();
+    const code = convertArabicNumbers(rawCode);
+    if (code === "010" || code === "0000") {
+      setShowSecretCodesInfo(true);
+    } else if (code === "1122") {
+      setAppState("SECRET_NOTES");
     }
-  }, [notes]);
+  };
 
   const formattedVersion = `v${version.x}.${version.y}.${version.z}`;
 
@@ -297,7 +320,7 @@ export default function App() {
                     theme={theme}
                     onBack={handleBackToNotes}
                     onSaveNote={(title, data) => handleSaveAppNote(title, data, "calculator")}
-                    onSecretCode={() => setAppState("SECRET_NOTES")}
+                    onSecretCode={handleSecretCode}
                   />
                 )}
 
@@ -383,6 +406,7 @@ export default function App() {
         onChangeLanguage={setLang}
         onChangeTheme={setTheme}
         onSecretCode={handleSecretCode}
+        version={formattedVersion}
       />
 
       <CalendarModal
@@ -420,69 +444,15 @@ export default function App() {
                 </button>
               </div>
               <ul className="space-y-4 text-neutral-700 dark:text-neutral-300 text-sm">
-                <li className="flex flex-col bg-neutral-100 dark:bg-neutral-900 p-3 rounded-xl border border-neutral-200 dark:border-neutral-700">
+                <li key="secret-notes" className="flex flex-col bg-neutral-100 dark:bg-neutral-900 p-3 rounded-xl border border-neutral-200 dark:border-neutral-700">
                   <span className="font-mono font-bold text-blue-500 mb-1">
-                    1111 أو ١١١١
-                  </span>
-                  <span>لعبة تترس / Tetris Game</span>
-                </li>
-                <li className="flex flex-col bg-neutral-100 dark:bg-neutral-900 p-3 rounded-xl border border-neutral-200 dark:border-neutral-700">
-                  <span className="font-mono font-bold text-blue-500 mb-1">
-                    1122 أو ١١٢٢
+                    1122
                   </span>
                   <span>الملاحظات السرية / Secret Notes</span>
                 </li>
-                <li className="flex flex-col bg-neutral-100 dark:bg-neutral-900 p-3 rounded-xl border border-neutral-200 dark:border-neutral-700">
+                <li key="secret-codes" className="flex flex-col bg-neutral-100 dark:bg-neutral-900 p-3 rounded-xl border border-neutral-200 dark:border-neutral-700">
                   <span className="font-mono font-bold text-blue-500 mb-1">
-                    2222 أو ٢٢٢٢
-                  </span>
-                  <span>لعبة إكس أو / Tic-Tac-Toe (XO)</span>
-                </li>
-                <li className="flex flex-col bg-neutral-100 dark:bg-neutral-900 p-3 rounded-xl border border-neutral-200 dark:border-neutral-700">
-                  <span className="font-mono font-bold text-blue-500 mb-1">
-                    2233 أو ٢٢٣٣
-                  </span>
-                  <span>حساب العمر بالتفصيل / Age Calculator</span>
-                </li>
-                <li className="flex flex-col bg-neutral-100 dark:bg-neutral-900 p-3 rounded-xl border border-neutral-200 dark:border-neutral-700">
-                  <span className="font-mono font-bold text-blue-500 mb-1">
-                    3333 أو ٣٣٣٣
-                  </span>
-                  <span>لعبة ردة الفعل / Reaction Time Game</span>
-                </li>
-                <li className="flex flex-col bg-neutral-100 dark:bg-neutral-900 p-3 rounded-xl border border-neutral-200 dark:border-neutral-700">
-                  <span className="font-mono font-bold text-blue-500 mb-1">
-                    4444 أو ٤٤٤٤
-                  </span>
-                  <span>لعبة التطور اللانهائي / Infinite Evolution</span>
-                </li>
-                <li className="flex flex-col bg-neutral-100 dark:bg-neutral-900 p-3 rounded-xl border border-neutral-200 dark:border-neutral-700">
-                  <span className="font-mono font-bold text-blue-500 mb-1">
-                    5555 أو ٥٥٥٥
-                  </span>
-                  <span>لعبة الذاكرة / Memory Cards Game</span>
-                </li>
-                <li className="flex flex-col bg-neutral-100 dark:bg-neutral-900 p-3 rounded-xl border border-neutral-200 dark:border-neutral-700">
-                  <span className="font-mono font-bold text-blue-500 mb-1">
-                    6666 أو ٦٦٦٦
-                  </span>
-                  <span>لعبة الفضاء / Space Invaders Game</span>
-                </li>
-                <li className="flex flex-col bg-neutral-100 dark:bg-neutral-900 p-3 rounded-xl border border-neutral-200 dark:border-neutral-700">
-                  <span className="font-mono font-bold text-blue-500 mb-1">
-                    3344 أو ٣٣٤٤
-                  </span>
-                  <span>محول الأوزان / Weight Converter</span>
-                </li>
-                <li className="flex flex-col bg-neutral-100 dark:bg-neutral-900 p-3 rounded-xl border border-neutral-200 dark:border-neutral-700">
-                  <span className="font-mono font-bold text-blue-500 mb-1">
-                    4455 أو ٤٤٥٥
-                  </span>
-                  <span>محول المسافات / Distance Converter</span>
-                </li>
-                <li className="flex flex-col bg-neutral-100 dark:bg-neutral-900 p-3 rounded-xl border border-neutral-200 dark:border-neutral-700">
-                  <span className="font-mono font-bold text-blue-500 mb-1">
-                    0000 أو ٠٠٠٠
+                    010
                   </span>
                   <span>استعراض الأكواد السرية / Secret Codes List</span>
                 </li>

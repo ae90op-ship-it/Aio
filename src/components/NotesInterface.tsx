@@ -43,6 +43,15 @@ export function NotesInterface({
 
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"date" | "title">("date");
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [editingTagNoteId, setEditingTagNoteId] = useState<string | null>(null);
+  const [newTagValue, setNewTagValue] = useState("");
+
+  const allTags = useMemo(() => {
+    const tags = new Set<string>();
+    notes.forEach((n) => n.tags?.forEach((t) => tags.add(t)));
+    return Array.from(tags);
+  }, [notes]);
 
   const themeDisplay =
     theme === "dark"
@@ -73,12 +82,44 @@ export function NotesInterface({
     );
   };
 
-  const filteredAndSortedNotes = useMemo(() => {
-    let result = notes.filter(
-      (n) =>
-        n.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        n.content.toLowerCase().includes(searchQuery.toLowerCase()),
+  const handleAddTag = (e: React.FormEvent, noteId: string) => {
+    e.preventDefault();
+    if (!newTagValue.trim()) return;
+    
+    setNotes((prev) =>
+      prev.map((n) => {
+        if (n.id === noteId) {
+          const tags = n.tags ? [...n.tags] : [];
+          if (!tags.includes(newTagValue.trim())) {
+            tags.push(newTagValue.trim());
+          }
+          return { ...n, tags };
+        }
+        return n;
+      })
     );
+    setNewTagValue("");
+    setEditingTagNoteId(null);
+  };
+
+  const handleRemoveTag = (noteId: string, tagToRemove: string) => {
+    setNotes((prev) =>
+      prev.map((n) => {
+        if (n.id === noteId) {
+          return { ...n, tags: n.tags?.filter(t => t !== tagToRemove) || [] };
+        }
+        return n;
+      })
+    );
+  };
+
+  const filteredAndSortedNotes = useMemo(() => {
+    let result = notes.filter((n) => {
+      const matchesSearch = n.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        n.content.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesTag = selectedTag ? n.tags?.includes(selectedTag) : true;
+      return matchesSearch && matchesTag;
+    });
 
     result.sort((a, b) => {
       if (a.isPinned && !b.isPinned) return -1;
@@ -150,6 +191,26 @@ export function NotesInterface({
             )}
           </button>
         </div>
+
+        {allTags.length > 0 && (
+          <div className="flex flex-wrap gap-2 mt-2">
+            <button
+              onClick={() => setSelectedTag(null)}
+              className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${selectedTag === null ? "bg-blue-600 text-white" : "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700"}`}
+            >
+              {lang === "ar" ? "الكل" : "All"}
+            </button>
+            {allTags.map((tag) => (
+              <button
+                key={tag}
+                onClick={() => setSelectedTag(tag)}
+                className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${selectedTag === tag ? "bg-blue-600 text-white" : "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700"}`}
+              >
+                #{tag}
+              </button>
+            ))}
+          </div>
+        )}
       </header>
 
       <main className="flex-1 p-8 space-y-6">
@@ -209,6 +270,38 @@ export function NotesInterface({
                 <p className="text-sm text-neutral-500 dark:text-neutral-500 mb-4">
                   {note.date}
                 </p>
+
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {note.tags?.map((tag) => (
+                    <span key={tag} className="inline-flex items-center gap-1 px-2 py-1 bg-neutral-100 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300 rounded text-xs">
+                      #{tag}
+                      <button onClick={(e) => { e.stopPropagation(); handleRemoveTag(note.id, tag); }} className="hover:text-red-500 rounded-full">
+                        <LucideIcons.X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
+                  
+                  {editingTagNoteId === note.id ? (
+                    <form onSubmit={(e) => handleAddTag(e, note.id)} className="inline-flex">
+                      <input 
+                        type="text" 
+                        value={newTagValue}
+                        onChange={(e) => setNewTagValue(e.target.value)}
+                        placeholder="Tag..."
+                        className="px-2 py-1 bg-white dark:bg-neutral-900 border border-blue-500 rounded text-xs w-20 focus:outline-none"
+                        autoFocus
+                        onBlur={() => setEditingTagNoteId(null)}
+                      />
+                    </form>
+                  ) : (
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); setEditingTagNoteId(note.id); setNewTagValue(""); }}
+                      className="inline-flex items-center gap-1 px-2 py-1 bg-neutral-50 dark:bg-neutral-800 border border-dashed border-neutral-300 dark:border-neutral-600 text-neutral-500 dark:text-neutral-400 rounded text-xs hover:bg-neutral-100 dark:hover:bg-neutral-700"
+                    >
+                      <Plus className="w-3 h-3" /> {lang === "ar" ? "علامة" : "Tag"}
+                    </button>
+                  )}
+                </div>
 
                 {note.appId ? (() => {
                   const appData = getAppById(note.appId);

@@ -1,5 +1,5 @@
 export type Language = "ar" | "en" | "ja";
-export type ThemeMode = "light" | "dark" | "ocean" | "forest" | "sunset";
+export type ThemeMode = "light" | "dark";
 
 export type AppCategory =
   | "SYSTEM & UTILITIES"
@@ -23,7 +23,8 @@ export interface Note {
   updatedAt: number;
   isPinned?: boolean;
   appId?: string;
-  appData?: any;
+  appData?: Record<string, unknown>;
+  tags?: string[];
 }
 
 export interface TrashedNote extends Note {

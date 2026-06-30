@@ -9,7 +9,7 @@ interface Props {
   theme: ThemeMode;
   onBack: () => void;
   onSaveNote?: (title: string, data: any) => void;
-  onSecretCode?: () => void;
+  onSecretCode?: (code: string) => void;
 }
 
 export function CalculatorApp({ lang, theme, onBack, onSaveNote, onSecretCode }: Props) {
@@ -31,8 +31,8 @@ export function CalculatorApp({ lang, theme, onBack, onSaveNote, onSecretCode }:
   };
 
   const handleCalculate = () => {
-    if (input === '010' && onSecretCode) {
-      onSecretCode();
+    if (onSecretCode && (input === '010' || input === '1122')) {
+      onSecretCode(input);
       return;
     }
     
