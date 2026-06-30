@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { Language, ThemeMode } from "../types";
-import { ArrowRight, Play, Square, RotateCcw } from "lucide-react";
+import { ArrowRight, Play, Square, RotateCcw, Save } from "lucide-react";
 import { motion } from "motion/react";
 
 interface Props {
   lang: Language;
   theme: ThemeMode;
   onBack: () => void;
+  onSaveNote?: (title: string, data: any) => void;
 }
 
-export function ClockApp({ lang, theme, onBack }: Props) {
+export function ClockApp({ lang, theme, onBack, onSaveNote }: Props) {
   const [time, setTime] = useState(new Date());
   const [activeTab, setActiveTab] = useState<"clock" | "stopwatch" | "timer">(
     "clock",
@@ -131,14 +132,24 @@ export function ClockApp({ lang, theme, onBack }: Props) {
             {appName}
           </h1>
         </div>
-        <button
-          onClick={onBack}
-          className="p-2 text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 rounded-full transition-colors"
-        >
-          <ArrowRight
-            className={`w-5 h-5 ${lang === "ar" ? "" : "rotate-180"}`}
-          />
-        </button>
+        <div className="flex gap-2">
+          {onSaveNote && (
+            <button
+              onClick={() => onSaveNote(lang === "ar" ? "الوقت" : "Time", `Saved Time: ${time.toLocaleTimeString()}`)}
+              className="p-2 text-blue-500 hover:text-white dark:text-blue-400 dark:hover:text-white bg-blue-50 hover:bg-blue-600 dark:bg-blue-900/30 dark:hover:bg-blue-600 rounded-full transition-colors"
+            >
+              <Save className="w-5 h-5" />
+            </button>
+          )}
+          <button
+            onClick={onBack}
+            className="p-2 text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 rounded-full transition-colors"
+          >
+            <ArrowRight
+              className={`w-5 h-5 ${lang === "ar" ? "" : "rotate-180"}`}
+            />
+          </button>
+        </div>
       </header>
 
       <main className="flex-1 p-6 md:p-12 flex flex-col items-center">

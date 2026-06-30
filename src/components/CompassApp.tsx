@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Language, ThemeMode } from '../types';
 import { translations } from '../i18n';
-import { ArrowLeft, Compass } from 'lucide-react';
+import { ArrowLeft, Compass, Save } from 'lucide-react';
 import { motion } from 'motion/react';
 
 interface Props {
   lang: Language;
   theme: ThemeMode;
   onBack: () => void;
+  onSaveNote?: (title: string, data: any) => void;
 }
 
-export function CompassApp({ lang, theme, onBack }: Props) {
+export function CompassApp({ lang, theme, onBack, onSaveNote }: Props) {
   const t = translations[lang];
   const [heading, setHeading] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -75,7 +76,16 @@ export function CompassApp({ lang, theme, onBack }: Props) {
         <h2 className="text-lg font-bold text-neutral-900 dark:text-white">
           {lang === 'ar' ? 'البوصلة' : 'Compass'}
         </h2>
-        <div className="w-9" />
+        <div className="flex gap-2">
+          {onSaveNote && (
+            <button
+              onClick={() => onSaveNote(lang === 'ar' ? 'اتجاه البوصلة' : 'Compass Heading', `Heading: ${heading ? Math.round(heading) + '° ' + getDirection(heading) : 'Unknown'}`)}
+              className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-full"
+            >
+              <Save className="w-5 h-5" />
+            </button>
+          )}
+        </div>
       </header>
 
       <div className="flex-1 flex flex-col items-center justify-center p-8">

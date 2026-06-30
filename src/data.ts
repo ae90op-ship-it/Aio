@@ -3,6 +3,17 @@ import { AppData, Language } from "./types";
 export const APPS: AppData[] = [
   // SYSTEM & UTILITIES
   {
+    id: "notes",
+    name: { ar: "ملاحظات", en: "Notes", ja: "ノート" },
+    category: "PRODUCTIVITY & OFFICE",
+    icon: "FileText",
+    description: {
+      ar: "محرر نصوص للملاحظات والأفكار.",
+      en: "Text editor for notes and ideas.",
+      ja: "メモやアイデアのためのテキストエディタ。",
+    },
+  },
+  {
     id: "clock",
     name: { ar: "الساعة", en: "Clock", ja: "時計" },
     category: "SYSTEM & UTILITIES",
@@ -70,62 +81,66 @@ export const APPS: AppData[] = [
       ja: "CSVテーブルの作成、Excel数式ヘルパー。",
     },
   },
-  {
-    id: "filemanager",
-    name: {
-      ar: "مدير الملفات",
-      en: "File Manager",
-      ja: "ファイルマネージャー",
-    },
-    category: "PRODUCTIVITY & OFFICE",
-    icon: "Folder",
-    description: {
-      ar: "هياكل المجلدات، تنظيف التخزين الافتراضي.",
-      en: "Folder structures, virtual storage cleanup.",
-      ja: "フォルダ構造、仮想ストレージのクリーンアップ。",
-    },
-  },
-  {
-    id: "wpsoffice",
-    name: { ar: "WPS Office", en: "WPS Office", ja: "WPS Office" },
-    category: "PRODUCTIVITY & OFFICE",
-    icon: "FileText",
-    description: {
-      ar: "صياغة المستندات، الكتابة الرسمية، تحرير المقالات.",
-      en: "Document drafting, formal writing, essay editing.",
-      ja: "文書作成、正式な執筆、エッセイ編集。",
-    },
-  },
-  {
-    id: "tooly",
-    name: {
-      ar: "Tooly & Device Info",
-      en: "Tooly & Device Info",
-      ja: "Tooly & デバイス情報",
-    },
-    category: "PRODUCTIVITY & OFFICE",
-    icon: "Wrench",
-    description: {
-      ar: "أدوات النص (regex، تغيير الحالة) ومواصفات نظام الأجهزة.",
-      en: "Text tools (regex, case change) and hardware system specs.",
-      ja: "テキストツール（正規表現、大文字小文字の変更）およびハードウェアシステム仕様。",
-    },
-  },
 
   // MEDIA & SCANNING
   {
     id: "gallery",
     name: {
-      ar: "المعرض & فيديو مي",
-      en: "Gallery & Mi Video",
-      ja: "ギャラリー & Miビデオ",
+      ar: "المعرض",
+      en: "Gallery",
+      ja: "ギャラリー",
     },
     category: "MEDIA & SCANNING",
     icon: "Image",
     description: {
-      ar: "بيانات وصفية للصور/الفيديو، برمجة نصية، علامات.",
-      en: "Image/video metadata, scripting, tags.",
-      ja: "画像/ビデオのメタデータ、スクリプト作成、タグ。",
+      ar: "عرض الصور والمجلدات المرئية.",
+      en: "View images and visual folders.",
+      ja: "画像とビジュアルフォルダを表示。",
+    },
+  },
+  {
+    id: "videoplayer",
+    name: {
+      ar: "مشغل الفيديو",
+      en: "Video Player",
+      ja: "ビデオプレーヤー",
+    },
+    category: "MEDIA & SCANNING",
+    icon: "PlaySquare",
+    description: {
+      ar: "تشغيل الفيديوهات بجميع الصيغ.",
+      en: "Play videos in all formats.",
+      ja: "すべてのフォーマットのビデオを再生。",
+    },
+  },
+  {
+    id: "videoeditor",
+    name: {
+      ar: "محرر الفيديو",
+      en: "Video Editor",
+      ja: "ビデオエディタ",
+    },
+    category: "MEDIA & SCANNING",
+    icon: "Film",
+    description: {
+      ar: "قص وتعديل وإضافة تأثيرات للفيديو.",
+      en: "Trim, edit, and add effects to videos.",
+      ja: "ビデオのトリミング、編集、エフェクトの追加。",
+    },
+  },
+  {
+    id: "audioeditor",
+    name: {
+      ar: "محرر الصوت",
+      en: "Audio Editor",
+      ja: "オーディオエディタ",
+    },
+    category: "MEDIA & SCANNING",
+    icon: "Music",
+    description: {
+      ar: "قص وتعديل ودمج الملفات الصوتية.",
+      en: "Trim, edit, and merge audio files.",
+      ja: "オーディオファイルのトリミング、編集、結合。",
     },
   },
   {
@@ -139,32 +154,6 @@ export const APPS: AppData[] = [
       ja: "アスペクト比、寸法、ピクセル計算。",
     },
   },
-  {
-    id: "imagetopdf",
-    name: {
-      ar: "محول الصور إلى PDF",
-      en: "Image to PDF",
-      ja: "画像をPDFに変換",
-    },
-    category: "MEDIA & SCANNING",
-    icon: "FileUp",
-    description: {
-      ar: "تجميع المستندات في مسارات PDF.",
-      en: "Compiling documents into PDF flows.",
-      ja: "ドキュメントをPDFフローにコンパイル。",
-    },
-  },
-  {
-    id: "camscanner",
-    name: { ar: "CamScanner", en: "CamScanner", ja: "CamScanner" },
-    category: "MEDIA & SCANNING",
-    icon: "Scan",
-    description: {
-      ar: "محرك التعرف الضوئي على الحروف، استخراج النص، تصحيح المحاذاة.",
-      en: "OCR engine, text extraction from images, alignment correction.",
-      ja: "OCRエンジン、画像からのテキスト抽出、配置補正。",
-    },
-  },
 
   // NETWORK & PASSWORDS
   {
@@ -176,17 +165,6 @@ export const APPS: AppData[] = [
       ar: "محاكاة قبو آمن، مولد كلمات المرور.",
       en: "Secure vault simulation, password generator.",
       ja: "安全なボールトシミュレーション、パスワードジェネレータ。",
-    },
-  },
-  {
-    id: "glasswire",
-    name: { ar: "GlassWire", en: "GlassWire", ja: "GlassWire" },
-    category: "NETWORK & PASSWORDS",
-    icon: "Activity",
-    description: {
-      ar: "سجلات حركة مرور الشبكة والتشخيصات.",
-      en: "Network traffic logs and diagnostics.",
-      ja: "ネットワークトラフィックのログと診断。",
     },
   },
 ];

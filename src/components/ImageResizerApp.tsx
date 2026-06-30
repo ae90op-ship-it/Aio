@@ -8,20 +8,23 @@ import {
   Maximize,
   Crop,
   Square,
+  Save,
 } from "lucide-react";
 
 interface Props {
   lang: Language;
   onExit: () => void;
+  onSaveNote?: (title: string, data: any) => void;
 }
 
 type ResizeMode = "fit" | "crop" | "pad";
 
-export function ImageResizerApp({ lang, onExit }: Props) {
+export function ImageResizerApp({ lang, onExit, onSaveNote }: Props) {
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [targetWidth, setTargetWidth] = useState<number>(800);
   const [targetHeight, setTargetHeight] = useState<number>(800);
   const [mode, setMode] = useState<ResizeMode>("pad");
+  const [filter, setFilter] = useState<string>("none");
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [originalImage, setOriginalImage] = useState<HTMLImageElement | null>(
@@ -32,7 +35,7 @@ export function ImageResizerApp({ lang, onExit }: Props) {
     if (originalImage && canvasRef.current) {
       renderImage();
     }
-  }, [originalImage, targetWidth, targetHeight, mode]);
+  }, [originalImage, targetWidth, targetHeight, mode, filter]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -69,6 +72,7 @@ export function ImageResizerApp({ lang, onExit }: Props) {
     ctx.clearRect(0, 0, tw, th);
 
     if (mode === "fit") {
+      ctx.filter = filter;
       const scale = Math.min(tw / imgW, th / imgH);
       const w = imgW * scale;
       const h = imgH * scale;
@@ -76,6 +80,7 @@ export function ImageResizerApp({ lang, onExit }: Props) {
       const y = (th - h) / 2;
       ctx.drawImage(originalImage, x, y, w, h);
     } else if (mode === "crop") {
+      ctx.filter = filter;
       const scale = Math.max(tw / imgW, th / imgH);
       const w = imgW * scale;
       const h = imgH * scale;
@@ -94,7 +99,7 @@ export function ImageResizerApp({ lang, onExit }: Props) {
       ctx.drawImage(originalImage, bgX, bgY, bgW, bgH);
 
       // Draw main image
-      ctx.filter = "none";
+      ctx.filter = filter;
       const scale = Math.min(tw / imgW, th / imgH);
       const w = imgW * scale;
       const h = imgH * scale;
@@ -127,6 +132,20 @@ export function ImageResizerApp({ lang, onExit }: Props) {
           {lang === "ar" ? "مغير حجم الصورة" : "Image Resizer"}
         </h2>
         <div className="flex gap-2">
+          {onSaveNote && imageSrc && (
+            <button
+              onClick={() => {
+                if (canvasRef.current) {
+                  const dataUrl = canvasRef.current.toDataURL("image/png");
+                  onSaveNote(lang === "ar" ? "صورة معدلة" : "Resized Image", dataUrl);
+                }
+              }}
+              className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-full transition-colors"
+              title={lang === "ar" ? "حفظ كملاحظة" : "Save as Note"}
+            >
+              <Save className="w-5 h-5" />
+            </button>
+          )}
           {imageSrc && (
             <button
               onClick={downloadImage}
@@ -240,6 +259,50 @@ export function ImageResizerApp({ lang, onExit }: Props) {
                       : "Keep full image with transparency"}
                   </div>
                 </div>
+              </button>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="font-semibold text-neutral-900 dark:text-white">
+              {lang === "ar" ? "الفلاتر والتأثيرات" : "Filters & Effects"}
+            </h3>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => setFilter("none")}
+                className={`p-2 rounded-lg border transition-all text-sm font-medium ${filter === "none" ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400" : "border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300"}`}
+              >
+                {lang === "ar" ? "بدون" : "None"}
+              </button>
+              <button
+                onClick={() => setFilter("grayscale(100%)")}
+                className={`p-2 rounded-lg border transition-all text-sm font-medium ${filter === "grayscale(100%)" ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400" : "border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300"}`}
+              >
+                {lang === "ar" ? "أبيض وأسود" : "Grayscale"}
+              </button>
+              <button
+                onClick={() => setFilter("sepia(100%)")}
+                className={`p-2 rounded-lg border transition-all text-sm font-medium ${filter === "sepia(100%)" ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400" : "border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300"}`}
+              >
+                {lang === "ar" ? "عتيق (سيبيا)" : "Sepia"}
+              </button>
+              <button
+                onClick={() => setFilter("contrast(150%)")}
+                className={`p-2 rounded-lg border transition-all text-sm font-medium ${filter === "contrast(150%)" ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400" : "border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300"}`}
+              >
+                {lang === "ar" ? "تباين عالي" : "High Contrast"}
+              </button>
+              <button
+                onClick={() => setFilter("invert(100%)")}
+                className={`p-2 rounded-lg border transition-all text-sm font-medium ${filter === "invert(100%)" ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400" : "border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300"}`}
+              >
+                {lang === "ar" ? "عكس الألوان" : "Invert"}
+              </button>
+              <button
+                onClick={() => setFilter("blur(5px)")}
+                className={`p-2 rounded-lg border transition-all text-sm font-medium ${filter === "blur(5px)" ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400" : "border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300"}`}
+              >
+                {lang === "ar" ? "ضبابي" : "Blur"}
               </button>
             </div>
           </div>

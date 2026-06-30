@@ -35,7 +35,12 @@ export function DrawingApp({ lang, onBack, initialData, onSaveNote }: Props) {
   const [isDrawing, setIsDrawing] = useState(false);
   const [color, setColor] = useState("#000000");
   const [lineWidth, setLineWidth] = useState(5);
-  const [tool, setTool] = useState<"draw" | "pan">("draw");
+  const [tool, setTool] = useState<"draw" | "pan" | "eraser" | "shape">("draw");
+  const [shapeType, setShapeType] = useState<"rect" | "circle" | "line" | "triangle" | "star" | "polygon">("rect");
+  const [polygonSides, setPolygonSides] = useState(5);
+  const [zoom, setZoom] = useState(1);
+  const [drawStart, setDrawStart] = useState({ x: 0, y: 0 });
+  const [canvasSnapshot, setCanvasSnapshot] = useState<ImageData | null>(null);
 
   // Pan state
   const [isPanning, setIsPanning] = useState(false);
@@ -73,12 +78,17 @@ export function DrawingApp({ lang, onBack, initialData, onSaveNote }: Props) {
   }, [initialData]);
 
   const startAction = (e: React.MouseEvent | React.TouchEvent) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+
+    const clientX = "touches" in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
+    const clientY = "touches" in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
+    
     if (tool === "pan") {
       setIsPanning(true);
-      const clientX =
-        "touches" in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
-      const clientY =
-        "touches" in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
       setPanStart({ x: clientX, y: clientY });
       if (containerRef.current) {
         setScrollStart({
@@ -88,7 +98,16 @@ export function DrawingApp({ lang, onBack, initialData, onSaveNote }: Props) {
       }
     } else {
       setIsDrawing(true);
-      draw(e);
+      const x = (clientX - rect.left) * scaleX;
+      const y = (clientY - rect.top) * scaleY;
+      
+      const ctx = canvas.getContext("2d");
+      if (ctx && tool === "shape") {
+        setDrawStart({ x, y });
+        setCanvasSnapshot(ctx.getImageData(0, 0, canvas.width, canvas.height));
+      } else {
+        draw(e);
+      }
     }
   };
 
@@ -96,10 +115,11 @@ export function DrawingApp({ lang, onBack, initialData, onSaveNote }: Props) {
     setIsDrawing(false);
     setIsPanning(false);
     const canvas = canvasRef.current;
-    if (canvas && tool === "draw") {
+    if (canvas && (tool === "draw" || tool === "eraser" || tool === "shape")) {
       const ctx = canvas.getContext("2d");
       if (ctx) ctx.beginPath();
     }
+    setCanvasSnapshot(null);
   };
 
   const handleAction = (e: React.MouseEvent | React.TouchEvent) => {
@@ -117,8 +137,51 @@ export function DrawingApp({ lang, onBack, initialData, onSaveNote }: Props) {
       return;
     }
 
-    if (tool === "draw") {
+    if (tool === "draw" || tool === "eraser" || tool === "shape") {
       draw(e);
+    }
+  };
+
+  const drawShapePath = (ctx: CanvasRenderingContext2D, x: number, y: number, startX: number, startY: number) => {
+    const width = x - startX;
+    const height = y - startY;
+    const radius = Math.sqrt(width * width + height * height);
+
+    ctx.beginPath();
+    if (shapeType === "rect") {
+      ctx.rect(startX, startY, width, height);
+    } else if (shapeType === "circle") {
+      ctx.arc(startX, startY, radius, 0, Math.PI * 2);
+    } else if (shapeType === "line") {
+      ctx.moveTo(startX, startY);
+      ctx.lineTo(x, y);
+    } else if (shapeType === "triangle") {
+      ctx.moveTo(startX + width / 2, startY);
+      ctx.lineTo(startX, y);
+      ctx.lineTo(x, y);
+      ctx.closePath();
+    } else if (shapeType === "polygon") {
+      const sides = Math.max(3, polygonSides);
+      for (let i = 0; i < sides; i++) {
+        const angle = (i * 2 * Math.PI) / sides - Math.PI / 2;
+        const px = startX + radius * Math.cos(angle);
+        const py = startY + radius * Math.sin(angle);
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+    } else if (shapeType === "star") {
+      const points = Math.max(3, polygonSides);
+      const innerRadius = radius / 2;
+      for (let i = 0; i < points * 2; i++) {
+        const r = i % 2 === 0 ? radius : innerRadius;
+        const angle = (i * Math.PI) / points - Math.PI / 2;
+        const px = startX + r * Math.cos(angle);
+        const py = startY + r * Math.sin(angle);
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
     }
   };
 
@@ -133,22 +196,38 @@ export function DrawingApp({ lang, onBack, initialData, onSaveNote }: Props) {
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
 
-    const x =
-      ("touches" in e
-        ? e.touches[0].clientX - rect.left
-        : (e as React.MouseEvent).clientX - rect.left) * scaleX;
-    const y =
-      ("touches" in e
-        ? e.touches[0].clientY - rect.top
-        : (e as React.MouseEvent).clientY - rect.top) * scaleY;
+    const clientX = "touches" in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
+    const clientY = "touches" in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
 
-    ctx.lineWidth = lineWidth;
-    ctx.strokeStyle = color;
+    const x = (clientX - rect.left) * scaleX;
+    const y = (clientY - rect.top) * scaleY;
 
-    ctx.lineTo(x, y);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(x, y);
+    if (tool === "eraser") {
+      ctx.globalCompositeOperation = "destination-out";
+      ctx.lineWidth = lineWidth;
+      ctx.lineTo(x, y);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+    } else if (tool === "shape") {
+      if (canvasSnapshot) {
+        ctx.globalCompositeOperation = "source-over";
+        ctx.putImageData(canvasSnapshot, 0, 0);
+        ctx.lineWidth = lineWidth;
+        ctx.strokeStyle = color;
+        drawShapePath(ctx, x, y, drawStart.x, drawStart.y);
+        ctx.stroke();
+      }
+    } else {
+      ctx.globalCompositeOperation = "source-over";
+      ctx.lineWidth = lineWidth;
+      ctx.strokeStyle = color;
+
+      ctx.lineTo(x, y);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+    }
   };
 
   const clearCanvas = () => {
@@ -212,6 +291,20 @@ export function DrawingApp({ lang, onBack, initialData, onSaveNote }: Props) {
               <PenLine className="w-5 h-5" />
             </button>
             <button
+              onClick={() => setTool("eraser")}
+              className={`p-2 transition-colors ${tool === "eraser" ? "bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400" : "text-neutral-500 hover:bg-neutral-200 dark:hover:bg-neutral-700"}`}
+              title={lang === "ar" ? "ممحاة" : "Eraser"}
+            >
+              <Eraser className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => setTool("shape")}
+              className={`p-2 transition-colors ${tool === "shape" ? "bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400" : "text-neutral-500 hover:bg-neutral-200 dark:hover:bg-neutral-700"}`}
+              title={lang === "ar" ? "أشكال" : "Shapes"}
+            >
+              <div className="w-5 h-5 border-2 border-current rounded-sm" />
+            </button>
+            <button
               onClick={() => setTool("pan")}
               className={`p-2 transition-colors ${tool === "pan" ? "bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400" : "text-neutral-500 hover:bg-neutral-200 dark:hover:bg-neutral-700"}`}
               title={lang === "ar" ? "تحريك" : "Pan"}
@@ -219,6 +312,13 @@ export function DrawingApp({ lang, onBack, initialData, onSaveNote }: Props) {
               <MousePointer2 className="w-5 h-5" />
             </button>
           </div>
+          
+          <div className="flex bg-neutral-100 dark:bg-neutral-800 rounded-lg overflow-hidden border border-neutral-200 dark:border-neutral-700 mr-2 items-center px-2">
+            <button onClick={() => setZoom(z => Math.max(0.1, z - 0.1))} className="p-1 text-neutral-500 hover:text-neutral-900 dark:hover:text-white">-</button>
+            <span className="text-xs font-mono w-10 text-center text-neutral-700 dark:text-neutral-300">{Math.round(zoom * 100)}%</span>
+            <button onClick={() => setZoom(z => Math.min(5, z + 0.1))} className="p-1 text-neutral-500 hover:text-neutral-900 dark:hover:text-white">+</button>
+          </div>
+
           <button
             onClick={downloadCanvas}
             className="p-2 text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 rounded-full"
@@ -234,11 +334,41 @@ export function DrawingApp({ lang, onBack, initialData, onSaveNote }: Props) {
         </div>
       </header>
 
+      {tool === "shape" && (
+        <div className="p-2 border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 flex justify-center gap-2 items-center flex-wrap">
+          <select 
+            value={shapeType} 
+            onChange={e => setShapeType(e.target.value as any)}
+            className="px-2 py-1 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded text-sm text-neutral-800 dark:text-neutral-200"
+          >
+            <option value="rect">{lang === "ar" ? "مستطيل" : "Rectangle"}</option>
+            <option value="circle">{lang === "ar" ? "دائرة" : "Circle"}</option>
+            <option value="line">{lang === "ar" ? "خط مستقيم" : "Line"}</option>
+            <option value="triangle">{lang === "ar" ? "مثلث" : "Triangle"}</option>
+            <option value="polygon">{lang === "ar" ? "مضلع" : "Polygon"}</option>
+            <option value="star">{lang === "ar" ? "نجمة" : "Star"}</option>
+          </select>
+          
+          {(shapeType === "polygon" || shapeType === "star") && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-neutral-600 dark:text-neutral-400">{lang === "ar" ? "عدد الأضلاع/النقاط:" : "Sides/Points:"}</span>
+              <input 
+                type="number" 
+                min="3" max="20" 
+                value={polygonSides} 
+                onChange={e => setPolygonSides(Number(e.target.value))}
+                className="w-16 px-2 py-1 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded text-sm text-neutral-800 dark:text-neutral-200"
+              />
+            </div>
+          )}
+        </div>
+      )}
+
       <div
         ref={containerRef}
         className="flex-1 overflow-auto bg-neutral-200 dark:bg-neutral-950 relative"
       >
-        <div className="min-w-max min-h-max p-10">
+        <div className="min-w-max min-h-max p-10" style={{ transform: `scale(${zoom})`, transformOrigin: "0 0" }}>
           <canvas
             ref={canvasRef}
             width={3000}
@@ -257,15 +387,27 @@ export function DrawingApp({ lang, onBack, initialData, onSaveNote }: Props) {
       </div>
 
       <div className="p-4 border-t border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 flex flex-col gap-4">
-        <div className="flex justify-center gap-2 flex-wrap">
-          {COLORS.map((c) => (
-            <button
-              key={c}
-              onClick={() => setColor(c)}
-              className={`w-8 h-8 rounded-full border-2 ${color === c ? "border-neutral-900 dark:border-white scale-110" : "border-neutral-300 dark:border-neutral-600"} transition-all`}
-              style={{ backgroundColor: c }}
+        <div className="flex justify-center gap-4 flex-wrap items-center">
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-neutral-600 dark:text-neutral-400">{lang === "ar" ? "اللون:" : "Color:"}</label>
+            <input 
+              type="color" 
+              value={color} 
+              onChange={e => setColor(e.target.value)}
+              className="w-10 h-10 p-0 border-0 rounded-lg cursor-pointer bg-transparent"
             />
-          ))}
+          </div>
+          
+          <div className="flex justify-center gap-1 flex-wrap border-l border-neutral-200 dark:border-neutral-700 pl-4">
+            {COLORS.map((c) => (
+              <button
+                key={c}
+                onClick={() => setColor(c)}
+                className={`w-6 h-6 rounded-full border-2 ${color === c ? "border-neutral-900 dark:border-white scale-110" : "border-neutral-300 dark:border-neutral-600"} transition-all`}
+                style={{ backgroundColor: c }}
+              />
+            ))}
+          </div>
         </div>
         <div className="flex items-center gap-4 max-w-md mx-auto w-full">
           <span className="text-sm text-neutral-600 dark:text-neutral-400">

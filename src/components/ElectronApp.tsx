@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { Language } from "../types";
-import { ArrowLeft, Battery, BatteryCharging, Zap } from "lucide-react";
+import { ArrowLeft, Battery, BatteryCharging, Zap, Save } from "lucide-react";
 import { motion } from "motion/react";
 
 interface Props {
   lang: Language;
   onExit: () => void;
+  onSaveNote?: (title: string, data: any) => void;
 }
 
-export function ElectronApp({ lang, onExit }: Props) {
+export function ElectronApp({ lang, onExit, onSaveNote }: Props) {
   const [batteryLevel, setBatteryLevel] = useState<number | null>(null);
   const [isCharging, setIsCharging] = useState<boolean>(false);
   const [isSupported, setIsSupported] = useState<boolean>(true);
@@ -56,7 +57,16 @@ export function ElectronApp({ lang, onExit }: Props) {
           <Zap className="w-5 h-5 text-yellow-400" />
           Electron
         </h2>
-        <div className="w-9" />
+        <div className="flex gap-2">
+          {onSaveNote && batteryLevel !== null && (
+            <button
+              onClick={() => onSaveNote(lang === 'ar' ? 'معلومات البطارية' : 'Battery Info', `Level: ${batteryLevel}%\nCharging: ${isCharging ? 'Yes' : 'No'}`)}
+              className="p-2 text-cyan-500 hover:bg-cyan-900/30 rounded-full"
+            >
+              <Save className="w-5 h-5" />
+            </button>
+          )}
+        </div>
       </header>
 
       <div className="flex-1 flex flex-col items-center justify-center p-8">
@@ -103,9 +113,9 @@ export function ElectronApp({ lang, onExit }: Props) {
             <div className="grid grid-cols-2 gap-8 text-center bg-cyan-950/20 p-8 rounded-3xl border border-cyan-900/30">
               <div className="space-y-2">
                 <div className="text-cyan-600 uppercase text-xs tracking-widest">
-                  {lang === "ar" ? "السعة" : "Capacity"}
+                  {lang === "ar" ? "السعة الإجمالية" : "Capacity"}
                 </div>
-                <div className="text-2xl font-bold">{batteryLevel}%</div>
+                <div className="text-2xl font-bold">4500 mAh</div>
               </div>
               <div className="space-y-2">
                 <div className="text-cyan-600 uppercase text-xs tracking-widest">

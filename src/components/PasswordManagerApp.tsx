@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { Language, ThemeMode } from '../types';
 import { translations } from '../i18n';
-import { ArrowLeft, Shield, Key, Plus, Copy, Eye, EyeOff, Trash2, Search } from 'lucide-react';
+import { ArrowLeft, Shield, Key, Plus, Copy, Eye, EyeOff, Trash2, Search, Save } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface Props {
   lang: Language;
   theme: ThemeMode;
   onBack: () => void;
+  onSaveNote?: (title: string, data: any) => void;
 }
 
 interface PasswordEntry {
@@ -17,7 +18,7 @@ interface PasswordEntry {
   password: string;
 }
 
-export function PasswordManagerApp({ lang, theme, onBack }: Props) {
+export function PasswordManagerApp({ lang, theme, onBack, onSaveNote }: Props) {
   const t = translations[lang];
   const [passwords, setPasswords] = useState<PasswordEntry[]>([]);
   const [search, setSearch] = useState('');
@@ -73,9 +74,19 @@ export function PasswordManagerApp({ lang, theme, onBack }: Props) {
             </h2>
           </div>
         </div>
-        <button onClick={() => setShowAdd(true)} className="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-md transition-colors">
-          <Plus className="w-5 h-5" />
-        </button>
+        <div className="flex gap-2">
+          {onSaveNote && (
+            <button
+              onClick={() => onSaveNote(lang === 'ar' ? 'كلمات المرور' : 'Passwords', `Saved ${passwords.length} passwords.`)}
+              className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-full"
+            >
+              <Save className="w-5 h-5" />
+            </button>
+          )}
+          <button onClick={() => setShowAdd(true)} className="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-md transition-colors">
+            <Plus className="w-5 h-5" />
+          </button>
+        </div>
       </header>
 
       <main className="flex-1 p-4 md:p-8 overflow-y-auto">

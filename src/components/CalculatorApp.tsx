@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
 import { Language, ThemeMode } from '../types';
 import { evaluate } from 'mathjs';
-import { ArrowLeft, Delete, Equal, Settings2 } from 'lucide-react';
+import { ArrowLeft, Delete, Settings2, Save } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface Props {
   lang: Language;
   theme: ThemeMode;
   onBack: () => void;
+  onSaveNote?: (title: string, data: any) => void;
+  onSecretCode?: () => void;
 }
 
-export function CalculatorApp({ lang, onBack }: Props) {
+export function CalculatorApp({ lang, theme, onBack, onSaveNote, onSecretCode }: Props) {
   const [input, setInput] = useState('');
   const [result, setResult] = useState('');
   const [isAdvanced, setIsAdvanced] = useState(false);
@@ -29,11 +31,23 @@ export function CalculatorApp({ lang, onBack }: Props) {
   };
 
   const handleCalculate = () => {
+    if (input === '010' && onSecretCode) {
+      onSecretCode();
+      return;
+    }
+    
     try {
+      if (!input) return;
       const res = evaluate(input);
       setResult(String(res));
     } catch (e) {
       setResult('Error');
+    }
+  };
+
+  const handleSave = () => {
+    if (onSaveNote && (input || result)) {
+      onSaveNote(lang === 'ar' ? 'حساب رياضي' : 'Calculation', `Input: ${input}\nResult: ${result}`);
     }
   };
 
@@ -52,40 +66,47 @@ export function CalculatorApp({ lang, onBack }: Props) {
   ];
 
   return (
-    <div className="flex flex-col h-full bg-neutral-100 dark:bg-neutral-900 w-full max-w-lg mx-auto shadow-2xl relative">
-      <div className="flex items-center justify-between p-4 bg-white dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700 shadow-sm z-10">
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={onBack}
-            className="p-2 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300 transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <h2 className="font-bold text-lg text-neutral-800 dark:text-white">
-            {isAdvanced ? 'Casio 991EX (Advanced)' : 'الآلة الحاسبة'}
-          </h2>
-        </div>
-        <button
-          onClick={() => setIsAdvanced(!isAdvanced)}
-          className={`p-2 rounded-full transition-colors flex items-center gap-2 text-sm font-medium ${isAdvanced ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400' : 'hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300'}`}
+    <div className="flex flex-col h-full bg-neutral-100 dark:bg-neutral-900 w-full relative">
+      <header className="p-4 flex items-center justify-between border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950">
+        <button 
+          onClick={onBack}
+          className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-full text-neutral-600 dark:text-neutral-400 transition-colors"
         >
-          <Settings2 className="w-5 h-5" />
+          <ArrowLeft className="w-5 h-5" />
         </button>
-      </div>
+        <div className="flex gap-2">
+          {onSaveNote && (
+            <button
+              onClick={handleSave}
+              className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-full transition-colors"
+              title={lang === 'ar' ? 'حفظ كملاحظة' : 'Save as Note'}
+            >
+              <Save className="w-5 h-5" />
+            </button>
+          )}
+          <button
+            onClick={() => setIsAdvanced(!isAdvanced)}
+            className={`p-2 rounded-full transition-colors flex items-center gap-2 text-sm font-medium ${isAdvanced ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400' : 'hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-400'}`}
+          >
+            <Settings2 className="w-5 h-5" />
+          </button>
+        </div>
+      </header>
 
-      <div className="flex-1 flex flex-col p-4 gap-4 overflow-y-auto">
-        <div className="flex-1 flex flex-col justify-end items-end p-6 bg-white dark:bg-neutral-800 rounded-2xl shadow-inner border border-neutral-200 dark:border-neutral-700 font-mono overflow-hidden">
-          <div className="text-xl text-neutral-500 dark:text-neutral-400 break-all w-full text-right min-h-[1.75rem]">
-            {input}
+      <div className="flex-1 flex flex-col p-6 max-w-lg mx-auto w-full gap-6">
+        <div className="flex-1 flex flex-col justify-end items-end p-6 bg-white dark:bg-neutral-950 rounded-3xl shadow-xl border border-neutral-200 dark:border-neutral-800 font-mono overflow-hidden relative">
+          <div className="absolute inset-0 bg-gradient-to-br from-transparent to-neutral-50 dark:to-neutral-900/20 pointer-events-none" />
+          <div className="text-2xl text-neutral-500 dark:text-neutral-400 break-all w-full text-right min-h-[2rem] z-10">
+            {input || '0'}
           </div>
-          <div className="text-4xl font-bold text-neutral-900 dark:text-white mt-2 break-all w-full text-right min-h-[2.5rem]">
+          <div className={`text-5xl font-light text-neutral-900 dark:text-white mt-2 break-all w-full text-right min-h-[3.5rem] z-10 tracking-tight transition-all ${result === 'Error' ? 'text-red-500 dark:text-red-400' : ''}`}>
             {result}
           </div>
         </div>
 
-        <div className="grid grid-cols-4 gap-2">
-          <button onClick={handleClear} className="col-span-2 p-4 rounded-xl bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 font-bold text-lg transition-colors">AC</button>
-          <button onClick={handleDelete} className="col-span-2 p-4 flex items-center justify-center rounded-xl bg-neutral-200 hover:bg-neutral-300 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 transition-colors"><Delete className="w-6 h-6" /></button>
+        <div className="grid grid-cols-4 gap-3 bg-white dark:bg-neutral-950 p-6 rounded-3xl shadow-xl border border-neutral-200 dark:border-neutral-800">
+          <button onClick={handleClear} className="col-span-2 p-4 rounded-2xl bg-rose-100 hover:bg-rose-200 dark:bg-rose-900/30 dark:hover:bg-rose-900/50 text-rose-600 dark:text-rose-400 font-semibold text-lg transition-all active:scale-95 shadow-sm">AC</button>
+          <button onClick={handleDelete} className="col-span-2 p-4 flex items-center justify-center rounded-2xl bg-neutral-200 hover:bg-neutral-300 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 transition-all active:scale-95 shadow-sm"><Delete className="w-6 h-6" /></button>
 
           <AnimatePresence>
             {isAdvanced && (
@@ -93,13 +114,13 @@ export function CalculatorApp({ lang, onBack }: Props) {
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
-                className="col-span-4 grid grid-cols-4 gap-2 mb-2"
+                className="col-span-4 grid grid-cols-4 gap-3 mb-1"
               >
                 {advancedButtons.map((btn) => (
                   <button
                     key={btn}
                     onClick={() => handleInput(btn)}
-                    className="p-3 rounded-xl bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/40 text-blue-700 dark:text-blue-300 font-mono text-sm font-medium transition-colors"
+                    className="p-3 rounded-xl bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/20 dark:hover:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 font-mono text-sm font-medium transition-all active:scale-95"
                   >
                     {btn}
                   </button>
@@ -108,19 +129,23 @@ export function CalculatorApp({ lang, onBack }: Props) {
             )}
           </AnimatePresence>
 
-          {basicButtons.map((btn) => (
-            <button
-              key={btn}
-              onClick={() => btn === '=' ? handleCalculate() : handleInput(btn)}
-              className={`p-4 rounded-xl text-xl font-bold transition-colors shadow-sm ${
-                btn === '=' ? 'bg-blue-500 hover:bg-blue-600 text-white' : 
-                ['/', '*', '-', '+'].includes(btn) ? 'bg-neutral-200 hover:bg-neutral-300 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200' :
-                'bg-white hover:bg-neutral-50 dark:bg-neutral-800/50 dark:hover:bg-neutral-700 text-neutral-900 dark:text-white'
-              }`}
-            >
-              {btn}
-            </button>
-          ))}
+          {basicButtons.map((btn) => {
+            const isOperator = ['/', '*', '-', '+'].includes(btn);
+            const isEqual = btn === '=';
+            return (
+              <button
+                key={btn}
+                onClick={() => isEqual ? handleCalculate() : handleInput(btn)}
+                className={`p-4 rounded-2xl text-2xl font-medium transition-all active:scale-95 shadow-sm ${
+                  isEqual ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/30 shadow-lg' : 
+                  isOperator ? 'bg-indigo-100 hover:bg-indigo-200 dark:bg-indigo-900/30 dark:hover:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 font-semibold' :
+                  'bg-neutral-50 hover:bg-neutral-100 dark:bg-neutral-900 dark:hover:bg-neutral-800 text-neutral-900 dark:text-white border border-neutral-100 dark:border-neutral-800'
+                }`}
+              >
+                {btn}
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>

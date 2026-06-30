@@ -3,20 +3,9 @@ import { Language, ThemeMode, Note, TrashedNote } from "./types";
 import { ThemeProvider } from "./components/ThemeProvider";
 import { NotesInterface } from "./components/NotesInterface";
 import { AppLauncher } from "./components/AppLauncher";
-import { SimulatedApp } from "./components/SimulatedApp";
 import { SettingsModal } from "./components/SettingsModal";
-import { TetrisGame } from "./components/TetrisGame";
-import { TicTacToeGame } from "./components/TicTacToeGame";
 import { ClockApp } from "./components/ClockApp";
 import { CalculatorApp } from "./components/CalculatorApp";
-import { SecretNotesInterface } from "./components/SecretNotesInterface";
-import { ReactionGame } from "./components/ReactionGame";
-import { EvolutionGame } from "./components/EvolutionGame";
-import { MemoryGame } from "./components/MemoryGame";
-import { SpaceGame } from "./components/SpaceGame";
-import { AgeCalculator } from "./components/AgeCalculator";
-import { HackerTyper } from "./components/HackerTyper";
-import { IdeasGenerator } from "./components/IdeasGenerator";
 import { DrawingApp } from "./components/DrawingApp";
 import { CompassApp } from "./components/CompassApp";
 import { PasswordManagerApp } from "./components/PasswordManagerApp";
@@ -24,30 +13,31 @@ import { SpreadsheetsApp } from "./components/SpreadsheetsApp";
 import { ElectronApp } from "./components/ElectronApp";
 import { CalendarModal } from "./components/CalendarModal";
 import { ImageResizerApp } from "./components/ImageResizerApp";
+import { GalleryApp } from "./components/GalleryApp";
+import { VideoPlayerApp } from "./components/VideoPlayerApp";
+import { VideoEditorApp } from "./components/VideoEditorApp";
+import { AudioEditorApp } from "./components/AudioEditorApp";
+import { TextNoteApp } from "./components/TextNoteApp";
+import { SecretNotesInterface } from "./components/SecretNotesInterface";
 import { AnimatePresence, motion } from "motion/react";
 import { X } from "lucide-react";
 
 type AppState =
   | "MAIN_NOTES"
-  | "APP_OPEN"
-  | "TETRIS"
-  | "XO_GAME"
   | "CLOCK_OPEN"
   | "CALCULATOR_OPEN"
-  | "SECRET_NOTES"
-  | "REACTION_GAME"
-  | "EVOLUTION_GAME"
-  | "MEMORY_GAME"
-  | "SPACE_GAME"
-  | "AGE_CALCULATOR"
-  | "HACKER_SCREEN"
-  | "IDEAS_GENERATOR"
   | "DRAWING_OPEN"
   | "COMPASS_OPEN"
   | "PASSWORDS_OPEN"
   | "SPREADSHEETS_OPEN"
   | "ELECTRON_OPEN"
-  | "IMAGERESIZER_OPEN";
+  | "IMAGERESIZER_OPEN"
+  | "GALLERY_OPEN"
+  | "VIDEOPLAYER_OPEN"
+  | "VIDEOEDITOR_OPEN"
+  | "AUDIOEDITOR_OPEN"
+  | "TEXTNOTE_OPEN"
+  | "SECRET_NOTES";
 type AppVersion = { x: number; y: number; z: number };
 
 const convertArabicNumbers = (str: string) => {
@@ -75,6 +65,7 @@ export default function App() {
   const [lang, setLang] = useState<Language>("ar");
   const [theme, setTheme] = useState<ThemeMode>("dark");
   const [activeNoteData, setActiveNoteData] = useState<any>(null);
+  const [activeNoteId, setActiveNoteId] = useState<string | null>(null);
 
   const [isLauncherOpen, setIsLauncherOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -140,9 +131,16 @@ export default function App() {
       setAppState("ELECTRON_OPEN");
     } else if (appId === "imageresizer") {
       setAppState("IMAGERESIZER_OPEN");
-    } else {
-      setActiveAppId(appId);
-      setAppState("APP_OPEN");
+    } else if (appId === "gallery") {
+      setAppState("GALLERY_OPEN");
+    } else if (appId === "videoplayer") {
+      setAppState("VIDEOPLAYER_OPEN");
+    } else if (appId === "videoeditor") {
+      setAppState("VIDEOEDITOR_OPEN");
+    } else if (appId === "audioeditor") {
+      setAppState("AUDIOEDITOR_OPEN");
+    } else if (appId === "notes") {
+      setAppState("TEXTNOTE_OPEN");
     }
   };
 
@@ -150,38 +148,82 @@ export default function App() {
     setAppState("MAIN_NOTES");
     setActiveAppId(null);
     setActiveNoteData(null);
+    setActiveNoteId(null);
   };
 
   const handleSaveAppNote = (title: string, data: any, appId: string) => {
-    const newNote: Note = {
-      id: Date.now().toString(),
-      title,
-      content:
-        lang === "ar"
-          ? `البيانات المحفوظة لـ ${appId}`
-          : `Saved data for ${appId}`,
-      date: new Date().toLocaleDateString(
-        lang === "ar" ? "ar-EG" : lang === "ja" ? "ja-JP" : "en-US",
-      ),
-      updatedAt: Date.now(),
-      appId,
-      appData: data,
-    };
-    setNotes((prev) => [newNote, ...prev]);
+    let noteData;
+    if (appId === "notes") {
+      noteData = {
+        title: data.title || title,
+        content: data.content || "",
+        date: new Date().toLocaleDateString(
+          lang === "ar" ? "ar-EG" : lang === "ja" ? "ja-JP" : "en-US",
+        ),
+        updatedAt: Date.now(),
+        // Keep appId unset for text notes for backwards compatibility
+      };
+    } else {
+      noteData = {
+        title,
+        content:
+          lang === "ar"
+            ? `البيانات المحفوظة لـ ${appId}`
+            : `Saved data for ${appId}`,
+        date: new Date().toLocaleDateString(
+          lang === "ar" ? "ar-EG" : lang === "ja" ? "ja-JP" : "en-US",
+        ),
+        updatedAt: Date.now(),
+        appId,
+        appData: data,
+      };
+    }
+
+    if (activeNoteId) {
+      setNotes((prev) =>
+        prev.map((n) =>
+          n.id === activeNoteId ? { ...n, ...noteData } : n
+        )
+      );
+    } else {
+      const newNote: Note = {
+        id: Date.now().toString(),
+        isPinned: false,
+        ...noteData,
+      };
+      setNotes((prev) => [newNote, ...prev]);
+    }
     handleBackToNotes();
   };
 
   const handleOpenAppNote = (note: Note) => {
-    if (note.appId === "spreadsheets") {
-      setActiveNoteData(note.appData);
-      setAppState("SPREADSHEETS_OPEN");
-    } else if (note.appId === "drawing") {
-      setActiveNoteData(note.appData);
-      setAppState("DRAWING_OPEN");
-    } else if (note.appId) {
-      setActiveAppId(note.appId);
-      setActiveNoteData(note.appData);
-      setAppState("APP_OPEN");
+    setActiveNoteId(note.id);
+
+    if (!note.appId || note.appId === "notes") {
+      setActiveNoteData({ title: note.title, content: note.content });
+      setAppState("TEXTNOTE_OPEN");
+      return;
+    }
+    
+    setActiveNoteData(note.appData);
+    
+    switch (note.appId) {
+      case "spreadsheets": setAppState("SPREADSHEETS_OPEN"); break;
+      case "drawing": setAppState("DRAWING_OPEN"); break;
+      case "clock": setAppState("CLOCK_OPEN"); break;
+      case "calculator": setAppState("CALCULATOR_OPEN"); break;
+      case "compass": setAppState("COMPASS_OPEN"); break;
+      case "passwords": setAppState("PASSWORDS_OPEN"); break;
+      case "electron": setAppState("ELECTRON_OPEN"); break;
+      case "imageresizer": setAppState("IMAGERESIZER_OPEN"); break;
+      case "gallery": setAppState("GALLERY_OPEN"); break;
+      case "videoplayer": setAppState("VIDEOPLAYER_OPEN"); break;
+      case "videoeditor": setAppState("VIDEOEDITOR_OPEN"); break;
+      case "audioeditor": setAppState("AUDIOEDITOR_OPEN"); break;
+      default:
+        setActiveAppId(note.appId);
+        setAppState("APP_OPEN");
+        break;
     }
   };
 
@@ -192,35 +234,7 @@ export default function App() {
   };
 
   const handleSecretCode = (rawCode: string) => {
-    const code = convertArabicNumbers(rawCode);
-    if (code === "1111") {
-      setAppState("TETRIS");
-      setIsSettingsOpen(false);
-    } else if (code === "2222") {
-      setAppState("XO_GAME");
-      setIsSettingsOpen(false);
-    } else if (code === "1122") {
-      setAppState("SECRET_NOTES");
-      setIsSettingsOpen(false);
-    } else if (code === "3333") {
-      setAppState("REACTION_GAME");
-      setIsSettingsOpen(false);
-    } else if (code === "4444") {
-      setAppState("EVOLUTION_GAME");
-      setIsSettingsOpen(false);
-    } else if (code === "5555") {
-      setAppState("MEMORY_GAME");
-      setIsSettingsOpen(false);
-    } else if (code === "6666") {
-      setAppState("SPACE_GAME");
-      setIsSettingsOpen(false);
-    } else if (code === "2233") {
-      setAppState("AGE_CALCULATOR");
-      setIsSettingsOpen(false);
-    } else if (code === "0000") {
-      setShowSecretCodesInfo(true);
-      setIsSettingsOpen(false);
-    }
+    // Secret codes removed as per instructions
   };
 
   // Trigger version increment on notes change
@@ -257,25 +271,12 @@ export default function App() {
                 transition={{ type: "spring", damping: 25, stiffness: 300 }}
                 className="w-full max-w-5xl h-[85vh] sm:h-[90vh] bg-white dark:bg-neutral-900 rounded-3xl shadow-2xl overflow-hidden flex flex-col relative"
               >
-                {appState === "APP_OPEN" && activeAppId && (
-                  <SimulatedApp
-                    appId={activeAppId}
-                    lang={lang}
-                    theme={theme}
-                    onBackToNotes={handleBackToNotes}
-                    onOpenLauncher={handleOpenLauncher}
-                    onOpenSettings={handleOpenSettings}
-                    onSaveNote={(title, data) =>
-                      handleSaveAppNote(title, data, activeAppId)
-                    }
-                  />
-                )}
-
                 {appState === "CLOCK_OPEN" && (
                   <ClockApp
                     lang={lang}
                     theme={theme}
                     onBack={handleBackToNotes}
+                    onSaveNote={(title, data) => handleSaveAppNote(title, data, "clock")}
                   />
                 )}
 
@@ -290,19 +291,13 @@ export default function App() {
                   />
                 )}
 
-                {appState === "TETRIS" && (
-                  <TetrisGame lang={lang} onExit={handleBackToNotes} />
-                )}
-
-                {appState === "XO_GAME" && (
-                  <TicTacToeGame lang={lang} onExit={handleBackToNotes} />
-                )}
-
                 {appState === "CALCULATOR_OPEN" && (
                   <CalculatorApp
                     lang={lang}
                     theme={theme}
                     onBack={handleBackToNotes}
+                    onSaveNote={(title, data) => handleSaveAppNote(title, data, "calculator")}
+                    onSecretCode={() => setAppState("SECRET_NOTES")}
                   />
                 )}
 
@@ -312,34 +307,6 @@ export default function App() {
                     theme={theme}
                     onBackToNotes={handleBackToNotes}
                   />
-                )}
-
-                {appState === "REACTION_GAME" && (
-                  <ReactionGame lang={lang} onExit={handleBackToNotes} />
-                )}
-
-                {appState === "EVOLUTION_GAME" && (
-                  <EvolutionGame lang={lang} onExit={handleBackToNotes} />
-                )}
-
-                {appState === "MEMORY_GAME" && (
-                  <MemoryGame lang={lang} onExit={handleBackToNotes} />
-                )}
-
-                {appState === "SPACE_GAME" && (
-                  <SpaceGame lang={lang} onExit={handleBackToNotes} />
-                )}
-
-                {appState === "AGE_CALCULATOR" && (
-                  <AgeCalculator lang={lang} onExit={handleBackToNotes} />
-                )}
-
-                {appState === "HACKER_SCREEN" && (
-                  <HackerTyper lang={lang} onExit={handleBackToNotes} />
-                )}
-
-                {appState === "IDEAS_GENERATOR" && (
-                  <IdeasGenerator lang={lang} onExit={handleBackToNotes} />
                 )}
 
                 {appState === "DRAWING_OPEN" && (
@@ -358,6 +325,7 @@ export default function App() {
                     lang={lang}
                     theme={theme}
                     onBack={handleBackToNotes}
+                    onSaveNote={(title, data) => handleSaveAppNote(title, data, "compass")}
                   />
                 )}
 
@@ -366,13 +334,29 @@ export default function App() {
                     lang={lang}
                     theme={theme}
                     onBack={handleBackToNotes}
+                    onSaveNote={(title, data) => handleSaveAppNote(title, data, "passwords")}
                   />
                 )}
                 {appState === "ELECTRON_OPEN" && (
-                  <ElectronApp lang={lang} onExit={handleBackToNotes} />
+                  <ElectronApp lang={lang} onExit={handleBackToNotes} onSaveNote={(title, data) => handleSaveAppNote(title, data, "electron")} />
                 )}
                 {appState === "IMAGERESIZER_OPEN" && (
-                  <ImageResizerApp lang={lang} onExit={handleBackToNotes} />
+                  <ImageResizerApp lang={lang} onExit={handleBackToNotes} onSaveNote={(title, data) => handleSaveAppNote(title, data, "imageresizer")} />
+                )}
+                {appState === "GALLERY_OPEN" && (
+                  <GalleryApp lang={lang} onExit={handleBackToNotes} onSaveNote={(title, data) => handleSaveAppNote(title, data, "gallery")} />
+                )}
+                {appState === "VIDEOPLAYER_OPEN" && (
+                  <VideoPlayerApp lang={lang} onExit={handleBackToNotes} onSaveNote={(title, data) => handleSaveAppNote(title, data, "videoplayer")} />
+                )}
+                {appState === "VIDEOEDITOR_OPEN" && (
+                  <VideoEditorApp lang={lang} onExit={handleBackToNotes} onSaveNote={(title, data) => handleSaveAppNote(title, data, "videoeditor")} />
+                )}
+                {appState === "AUDIOEDITOR_OPEN" && (
+                  <AudioEditorApp lang={lang} onExit={handleBackToNotes} onSaveNote={(title, data) => handleSaveAppNote(title, data, "audioeditor")} />
+                )}
+                {appState === "TEXTNOTE_OPEN" && (
+                  <TextNoteApp lang={lang} onBack={handleBackToNotes} initialData={activeNoteData} onSaveNote={(title, data) => handleSaveAppNote(title, data, "notes")} />
                 )}
               </motion.div>
             </div>
@@ -483,6 +467,18 @@ export default function App() {
                     6666 أو ٦٦٦٦
                   </span>
                   <span>لعبة الفضاء / Space Invaders Game</span>
+                </li>
+                <li className="flex flex-col bg-neutral-100 dark:bg-neutral-900 p-3 rounded-xl border border-neutral-200 dark:border-neutral-700">
+                  <span className="font-mono font-bold text-blue-500 mb-1">
+                    3344 أو ٣٣٤٤
+                  </span>
+                  <span>محول الأوزان / Weight Converter</span>
+                </li>
+                <li className="flex flex-col bg-neutral-100 dark:bg-neutral-900 p-3 rounded-xl border border-neutral-200 dark:border-neutral-700">
+                  <span className="font-mono font-bold text-blue-500 mb-1">
+                    4455 أو ٤٤٥٥
+                  </span>
+                  <span>محول المسافات / Distance Converter</span>
                 </li>
                 <li className="flex flex-col bg-neutral-100 dark:bg-neutral-900 p-3 rounded-xl border border-neutral-200 dark:border-neutral-700">
                   <span className="font-mono font-bold text-blue-500 mb-1">
