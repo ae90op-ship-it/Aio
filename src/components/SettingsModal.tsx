@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Language, ThemeMode, Note, TrashedNote } from "../types";
 import { translations } from "../i18n";
 import {
@@ -45,10 +45,22 @@ export function SettingsModal({
   const [secretCode, setSecretCode] = useState("");
   const [showTrash, setShowTrash] = useState(false);
 
+  useEffect(() => {
+    if (!isOpen) {
+      setShowTrash(false);
+      setSecretCode("");
+    }
+  }, [isOpen]);
+
   const handleSecretSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (secretCode) {
-      onSecretCode(secretCode);
+      const code = secretCode.trim().toLowerCase();
+      if (code === "todo" || code === "تود") {
+        onClose();
+      } else {
+        onSecretCode(secretCode);
+      }
       setSecretCode("");
     }
   };
@@ -92,9 +104,9 @@ export function SettingsModal({
                 {showTrash ? (
                   <button
                     onClick={() => setShowTrash(false)}
-                    className="text-sm text-blue-500 hover:text-blue-600 transition-colors"
+                    className="p-1.5 text-neutral-500 hover:text-neutral-900 bg-neutral-200 hover:bg-neutral-300 dark:bg-neutral-700 dark:text-neutral-400 dark:hover:text-white dark:hover:bg-neutral-600 rounded-full transition-colors"
                   >
-                    {lang === "ar" ? "← رجوع" : "← Back"}
+                    <X className="w-5 h-5" />
                   </button>
                 ) : (
                   <h2 className="text-xl font-semibold text-neutral-900 dark:text-white">
@@ -107,12 +119,14 @@ export function SettingsModal({
                   </h2>
                 )}
               </div>
-              <button
-                onClick={onClose}
-                className="p-2 text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white bg-neutral-200 hover:bg-neutral-300 dark:bg-neutral-800 dark:hover:bg-neutral-700 rounded-full transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              {!showTrash && (
+                <button
+                  onClick={onClose}
+                  className="p-2 text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white bg-neutral-200 hover:bg-neutral-300 dark:bg-neutral-800 dark:hover:bg-neutral-700 rounded-full transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              )}
             </div>
 
             <div className="p-6 space-y-6 overflow-y-auto flex-1">

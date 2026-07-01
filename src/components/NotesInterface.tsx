@@ -12,6 +12,7 @@ import {
   PinOff,
   Calendar as CalendarIcon,
   Type,
+  Filter,
 } from "lucide-react";
 import * as LucideIcons from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
@@ -44,6 +45,7 @@ export function NotesInterface({
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"date" | "title">("date");
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [selectedApp, setSelectedApp] = useState<string | "ALL">("ALL");
   const [editingTagNoteId, setEditingTagNoteId] = useState<string | null>(null);
   const [newTagValue, setNewTagValue] = useState("");
 
@@ -51,6 +53,18 @@ export function NotesInterface({
     const tags = new Set<string>();
     notes.forEach((n) => n.tags?.forEach((t) => tags.add(t)));
     return Array.from(tags);
+  }, [notes]);
+
+  const uniqueApps = useMemo(() => {
+    const apps = new Set<string>();
+    notes.forEach((n) => {
+      if (n.appId && n.appId !== "notes") {
+        apps.add(n.appId);
+      } else {
+        apps.add("notes");
+      }
+    });
+    return Array.from(apps);
   }, [notes]);
 
   const themeDisplay =
@@ -118,7 +132,9 @@ export function NotesInterface({
       const matchesSearch = n.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         n.content.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesTag = selectedTag ? n.tags?.includes(selectedTag) : true;
-      return matchesSearch && matchesTag;
+      const appId = n.appId || "notes";
+      const matchesApp = selectedApp === "ALL" ? true : appId === selectedApp;
+      return matchesSearch && matchesTag && matchesApp;
     });
 
     result.sort((a, b) => {
@@ -133,7 +149,61 @@ export function NotesInterface({
     });
 
     return result;
-  }, [notes, searchQuery, sortBy]);
+  }, [notes, searchQuery, sortBy, selectedTag, selectedApp]);
+
+  const renderAppPreview = (note: Note) => {
+    if (!note.appId || note.appId === "notes") {
+      return (
+        <div 
+          className="whitespace-pre-wrap text-neutral-700 dark:text-neutral-300 mt-2" 
+          dangerouslySetInnerHTML={{ __html: note.content }} 
+        />
+      );
+    }
+    
+    const { appId, appData } = note;
+    if (!appData) return <p className="text-neutral-500 italic">{note.content}</p>;
+
+    if (appId === "drawing") {
+      return (
+        <div className="mt-3 bg-white dark:bg-neutral-900 rounded-lg p-2 border border-neutral-200 dark:border-neutral-700">
+          <img src={appData as string} alt="Drawing preview" className="w-full max-h-64 object-contain rounded-md" />
+        </div>
+      );
+    }
+
+    if (typeof appData === "string") {
+      return (
+        <pre className="mt-3 bg-neutral-100 dark:bg-neutral-900/50 p-3 rounded-lg font-mono text-sm whitespace-pre-wrap text-neutral-800 dark:text-neutral-300">
+          {appData}
+        </pre>
+      );
+    }
+
+    if (appId === "spreadsheets" && Array.isArray(appData)) {
+      return (
+        <div className="mt-3 overflow-x-auto bg-white dark:bg-neutral-900 rounded-lg border border-neutral-200 dark:border-neutral-700 p-2">
+           <table className="w-full text-xs text-left border-collapse">
+             <tbody>
+               {appData.slice(0, 5).map((row: any, i: number) => (
+                 <tr key={i}>
+                   {Array.isArray(row) && row.slice(0, 5).map((cell: any, j: number) => (
+                     <td key={j} className="border border-neutral-200 dark:border-neutral-800 p-1.5 truncate max-w-[100px]">{cell}</td>
+                   ))}
+                 </tr>
+               ))}
+             </tbody>
+           </table>
+        </div>
+      );
+    }
+
+    return (
+      <pre className="mt-3 bg-neutral-100 dark:bg-neutral-900/50 p-3 rounded-lg font-mono text-xs whitespace-pre-wrap text-neutral-500 overflow-hidden max-h-32">
+        {JSON.stringify(appData, null, 2)}
+      </pre>
+    );
+  };
 
   return (
     <div className="flex-1 flex flex-col relative w-full max-w-4xl mx-auto h-full min-h-screen bg-transparent text-neutral-900 dark:text-neutral-200">
@@ -179,6 +249,23 @@ export function NotesInterface({
               className="w-full bg-neutral-100 dark:bg-neutral-800 border border-transparent focus:border-blue-500 rounded-xl pl-9 pr-4 py-2 text-sm text-neutral-900 dark:text-white focus:outline-none transition-colors"
             />
           </div>
+          
+          <div className="relative flex items-center bg-neutral-100 dark:bg-neutral-800 rounded-xl px-2">
+            <Filter className="w-4 h-4 text-neutral-500 mr-1" />
+            <select
+              value={selectedApp}
+              onChange={(e) => setSelectedApp(e.target.value)}
+              className="bg-transparent border-none text-sm text-neutral-700 dark:text-neutral-300 focus:outline-none py-2 cursor-pointer"
+            >
+              <option value="ALL">{lang === "ar" ? "جميع البرامج" : "All Apps"}</option>
+              {uniqueApps.map(app => (
+                <option key={app} value={app}>
+                  {app === "notes" ? (lang === "ar" ? "الملاحظات" : "Notes") : getAppById(app)?.name[lang] || app}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <button
             onClick={() => setSortBy(sortBy === "date" ? "title" : "date")}
             className="p-2 flex items-center justify-center bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-xl text-neutral-600 dark:text-neutral-300 transition-colors"
@@ -233,11 +320,12 @@ export function NotesInterface({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 key={note.id}
-                className={`group bg-white dark:bg-neutral-800/50 rounded-2xl p-6 border transition-all relative shadow-sm hover:shadow-md ${note.isPinned ? "border-yellow-400/50 shadow-[0_0_15px_rgba(250,204,21,0.1)]" : "border-neutral-200 dark:border-neutral-700/50 hover:border-blue-500/30 dark:hover:border-blue-500/30"}`}
+                className={`group bg-white dark:bg-neutral-800/50 rounded-2xl p-6 border transition-all relative shadow-sm hover:shadow-md cursor-pointer ${note.isPinned ? "border-yellow-400/50 shadow-[0_0_15px_rgba(250,204,21,0.1)]" : "border-neutral-200 dark:border-neutral-700/50 hover:border-blue-500/30 dark:hover:border-blue-500/30"}`}
+                onClick={() => handleEditNote(note)}
               >
-                <div className="absolute top-4 end-4 flex gap-2" dir="ltr">
+                <div className="absolute top-4 left-4 flex gap-2" dir="ltr">
                   <button
-                    onClick={() => togglePin(note.id)}
+                    onClick={(e) => { e.stopPropagation(); togglePin(note.id); }}
                     className={`p-2 rounded-full transition-all ${note.isPinned ? "text-yellow-500 hover:bg-yellow-500/10 bg-yellow-500/10" : "text-neutral-400 hover:text-yellow-500 hover:bg-yellow-500/10 bg-neutral-200/50 dark:bg-neutral-700/50"}`}
                   >
                     {note.isPinned ? (
@@ -247,27 +335,29 @@ export function NotesInterface({
                     )}
                   </button>
                   <button
-                    onClick={() => handleDeleteNote(note)}
+                    onClick={(e) => { e.stopPropagation(); handleDeleteNote(note); }}
                     className="p-2 text-red-500 hover:bg-red-500/10 bg-red-500/10 rounded-full transition-all"
                     title={t.deleteNote}
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
-                  <button
-                    onClick={() => handleEditNote(note)}
-                    className="p-2 text-blue-500 hover:bg-blue-500/10 bg-blue-500/10 rounded-full transition-all"
-                    title={t.editNote}
-                  >
-                    <Edit3 className="w-4 h-4" />
-                  </button>
                 </div>
-                <h2 className="text-lg font-semibold text-neutral-900 dark:text-white mb-2 pr-24 sm:pr-36 flex items-center gap-2">
-                  {note.isPinned && (
-                    <Pin className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                
+                <div className="flex items-center gap-2 mb-2 pl-24">
+                  {note.appId && note.appId !== "notes" && (
+                    <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-semibold">
+                      {getAppById(note.appId)?.name[lang] || note.appId}
+                    </div>
                   )}
-                  {note.title || "..."}
-                </h2>
-                <p className="text-sm text-neutral-500 dark:text-neutral-500 mb-4">
+                  <h2 className="text-lg font-semibold text-neutral-900 dark:text-white flex items-center gap-2">
+                    {note.isPinned && (
+                      <Pin className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                    )}
+                    {note.title || "..."}
+                  </h2>
+                </div>
+                
+                <p className="text-sm text-neutral-500 dark:text-neutral-500 mb-4 pl-24">
                   {note.date}
                 </p>
 
@@ -291,6 +381,7 @@ export function NotesInterface({
                         className="px-2 py-1 bg-white dark:bg-neutral-900 border border-blue-500 rounded text-xs w-20 focus:outline-none"
                         autoFocus
                         onBlur={() => setEditingTagNoteId(null)}
+                        onClick={(e) => e.stopPropagation()}
                       />
                     </form>
                   ) : (
@@ -303,49 +394,7 @@ export function NotesInterface({
                   )}
                 </div>
 
-                {note.appId ? (() => {
-                  const appData = getAppById(note.appId);
-                  const IconComponent = appData?.icon ? (LucideIcons as any)[appData.icon] : LucideIcons.Box;
-                  return (
-                    <div className="mt-4 flex flex-col gap-2">
-                      {note.appId === "drawing" && note.appData && (
-                        <div className="bg-white dark:bg-neutral-900 rounded-lg p-2 border border-neutral-200 dark:border-neutral-700">
-                          <img
-                            src={note.appData}
-                            alt="Drawing preview"
-                            className="w-full h-48 object-contain rounded-md"
-                          />
-                        </div>
-                      )}
-                      <div
-                        className="p-4 rounded-xl bg-neutral-100 dark:bg-neutral-800/80 border border-neutral-200 dark:border-neutral-700 flex items-center justify-between cursor-pointer hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors shadow-sm"
-                        onClick={() => onOpenAppNote(note)}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-inner">
-                            <IconComponent className="w-6 h-6" />
-                          </div>
-                          <div>
-                            <h3 className="font-bold text-neutral-900 dark:text-white">
-                              {appData ? appData.name[lang] : note.appId}
-                            </h3>
-                            <p className="text-xs text-neutral-500 dark:text-neutral-400 font-mono mt-1">
-                              {lang === "ar" ? "بيانات التطبيق المحفوظة" : "Saved App Data"}
-                            </p>
-                          </div>
-                        </div>
-                        <button className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm transition-colors shadow-md flex items-center gap-2">
-                          <Edit3 className="w-4 h-4" />
-                          {lang === "ar" ? "تعديل" : "Edit"}
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })() : (
-                  <p className="whitespace-pre-wrap text-neutral-700 dark:text-neutral-300">
-                    {note.content}
-                  </p>
-                )}
+                {renderAppPreview(note)}
               </motion.div>
             ))}
         </AnimatePresence>

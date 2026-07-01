@@ -1,11 +1,10 @@
 import { AppData, Language } from "./types";
 
 export const APPS: AppData[] = [
-  // SYSTEM & UTILITIES
   {
     id: "notes",
-    name: { ar: "ملاحظات", en: "Notes", ja: "ノート" },
-    category: "PRODUCTIVITY & OFFICE",
+    name: { ar: "الملاحظات", en: "Notes", ja: "ノート" },
+    category: "PRODUCTIVITY",
     icon: "FileText",
     description: {
       ar: "محرر نصوص للملاحظات والأفكار.",
@@ -14,20 +13,20 @@ export const APPS: AppData[] = [
     },
   },
   {
-    id: "clock",
-    name: { ar: "الساعة", en: "Clock", ja: "時計" },
-    category: "SYSTEM & UTILITIES",
-    icon: "Clock",
+    id: "spreadsheets",
+    name: { ar: "جدول البيانات", en: "Spreadsheets", ja: "スプレッドシート" },
+    category: "PRODUCTIVITY",
+    icon: "Table",
     description: {
-      ar: "منبهات، مؤقتات، ساعة عالمية، بومودورو.",
-      en: "Alarms, timers, world clock, Pomodoro.",
-      ja: "アラーム、タイマー、世界時計、ポモドーロ。",
+      ar: "إنشاء جداول CSV، مساعد صيغ Excel.",
+      en: "Create CSV tables, Excel formula helper.",
+      ja: "CSVテーブルの作成、Excel数式ヘルパー。",
     },
   },
   {
     id: "drawing",
     name: { ar: "برنامج الرسم", en: "Drawing App", ja: "お絵かきアプリ" },
-    category: "SYSTEM & UTILITIES",
+    category: "CREATIVE",
     icon: "Palette",
     description: {
       ar: "رسم حر، ألوان متعددة، ومسح.",
@@ -36,9 +35,20 @@ export const APPS: AppData[] = [
     },
   },
   {
+    id: "clock",
+    name: { ar: "الساعة", en: "Clock", ja: "時計" },
+    category: "UTILITIES",
+    icon: "Clock",
+    description: {
+      ar: "منبهات، مؤقتات، ساعة عالمية، بومودورو.",
+      en: "Alarms, timers, world clock, Pomodoro.",
+      ja: "アラーム、タイマー、世界時計、ポモドーロ。",
+    },
+  },
+  {
     id: "compass",
     name: { ar: "البوصلة", en: "Compass", ja: "コンパス" },
-    category: "SYSTEM & UTILITIES",
+    category: "UTILITIES",
     icon: "Compass",
     description: {
       ar: "الاتجاهات، إحداثيات GPS، محاكاة الملاحة.",
@@ -49,7 +59,7 @@ export const APPS: AppData[] = [
   {
     id: "calculator",
     name: { ar: "الآلة الحاسبة", en: "Calculator", ja: "電卓" },
-    category: "SYSTEM & UTILITIES",
+    category: "UTILITIES",
     icon: "Calculator",
     description: {
       ar: "معادلات أساسية وحلال مصفوفات/تفاضل وتكامل علمي متقدم.",
@@ -58,9 +68,20 @@ export const APPS: AppData[] = [
     },
   },
   {
+    id: "passwords",
+    name: { ar: "كلمات المرور", en: "Password Manager", ja: "パスワードマネージャー" },
+    category: "SECURITY",
+    icon: "Key",
+    description: {
+      ar: "محاكاة قبو آمن، مولد كلمات المرور.",
+      en: "Secure vault simulation, password generator.",
+      ja: "安全なボールトシミュレーション、パスワードジェネレータ。",
+    },
+  },
+  {
     id: "electron",
     name: { ar: "الكترون", en: "Electron", ja: "電子" },
-    category: "SYSTEM & UTILITIES",
+    category: "SYSTEM",
     icon: "Zap",
     description: {
       ar: "معلومات البطارية.",
@@ -68,29 +89,10 @@ export const APPS: AppData[] = [
       ja: "バッテリー情報。",
     },
   },
-
-  // PRODUCTIVITY & OFFICE
-  {
-    id: "spreadsheets",
-    name: { ar: "جداول البيانات", en: "Spreadsheets", ja: "スプレッドシート" },
-    category: "PRODUCTIVITY & OFFICE",
-    icon: "Table",
-    description: {
-      ar: "إنشاء جداول CSV، مساعد صيغ Excel.",
-      en: "Create CSV tables, Excel formula helper.",
-      ja: "CSVテーブルの作成、Excel数式ヘルパー。",
-    },
-  },
-
-  // MEDIA & SCANNING
   {
     id: "gallery",
-    name: {
-      ar: "المعرض",
-      en: "Gallery",
-      ja: "ギャラリー",
-    },
-    category: "MEDIA & SCANNING",
+    name: { ar: "المعرض", en: "Gallery", ja: "ギャラリー" },
+    category: "MEDIA",
     icon: "Image",
     description: {
       ar: "عرض الصور والمجلدات المرئية.",
@@ -99,13 +101,20 @@ export const APPS: AppData[] = [
     },
   },
   {
-    id: "videoplayer",
-    name: {
-      ar: "مشغل الفيديو",
-      en: "Video Player",
-      ja: "ビデオプレーヤー",
+    id: "imageresizer",
+    name: { ar: "مغير حجم الصورة", en: "Image Resizer", ja: "画像リサイズ" },
+    category: "MEDIA",
+    icon: "Maximize",
+    description: {
+      ar: "نسب العرض إلى الارتفاع، الأبعاد، حسابات البكسل.",
+      en: "Aspect ratios, dimensions, pixel calculations.",
+      ja: "アスペクト比、寸法、ピクセル計算。",
     },
-    category: "MEDIA & SCANNING",
+  },
+  {
+    id: "videoplayer",
+    name: { ar: "مشغل الفيديو", en: "Video Player", ja: "ビデオプレーヤー" },
+    category: "MEDIA",
     icon: "PlaySquare",
     description: {
       ar: "تشغيل الفيديوهات بجميع الصيغ.",
@@ -115,12 +124,8 @@ export const APPS: AppData[] = [
   },
   {
     id: "videoeditor",
-    name: {
-      ar: "محرر الفيديو",
-      en: "Video Editor",
-      ja: "ビデオエディタ",
-    },
-    category: "MEDIA & SCANNING",
+    name: { ar: "محرر الفيديو", en: "Video Editor", ja: "ビデオエディタ" },
+    category: "MEDIA",
     icon: "Film",
     description: {
       ar: "قص وتعديل وإضافة تأثيرات للفيديو.",
@@ -130,12 +135,8 @@ export const APPS: AppData[] = [
   },
   {
     id: "audioeditor",
-    name: {
-      ar: "محرر الصوت",
-      en: "Audio Editor",
-      ja: "オーディオエディタ",
-    },
-    category: "MEDIA & SCANNING",
+    name: { ar: "محرر الصوت", en: "Audio Editor", ja: "オーディオエディタ" },
+    category: "MEDIA",
     icon: "Music",
     description: {
       ar: "قص وتعديل ودمج الملفات الصوتية.",
@@ -143,31 +144,6 @@ export const APPS: AppData[] = [
       ja: "オーディオファイルのトリミング、編集、結合。",
     },
   },
-  {
-    id: "imageresizer",
-    name: { ar: "مغير حجم الصور", en: "Image Resizer", ja: "画像リサイズ" },
-    category: "MEDIA & SCANNING",
-    icon: "Maximize",
-    description: {
-      ar: "نسب العرض إلى الارتفاع، الأبعاد، حسابات البكسل.",
-      en: "Aspect ratios, dimensions, pixel calculations.",
-      ja: "アスペクト比、寸法、ピクセル計算。",
-    },
-  },
-
-  // NETWORK & PASSWORDS
-  {
-    id: "passwords",
-    name: { ar: "كلمات المرور", en: "Passwords", ja: "パスワード" },
-    category: "NETWORK & PASSWORDS",
-    icon: "Key",
-    description: {
-      ar: "محاكاة قبو آمن، مولد كلمات المرور.",
-      en: "Secure vault simulation, password generator.",
-      ja: "安全なボールトシミュレーション、パスワードジェネレータ。",
-    },
-  },
 ];
 
-// Helper to get app by ID
 export const getAppById = (id: string) => APPS.find((a) => a.id === id);

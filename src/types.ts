@@ -1,11 +1,7 @@
 export type Language = "ar" | "en" | "ja";
 export type ThemeMode = "light" | "dark";
 
-export type AppCategory =
-  | "SYSTEM & UTILITIES"
-  | "PRODUCTIVITY & OFFICE"
-  | "MEDIA & SCANNING"
-  | "NETWORK & PASSWORDS";
+export type AppCategory = string;
 
 export interface AppData {
   id: string;

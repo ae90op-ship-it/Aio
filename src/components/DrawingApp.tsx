@@ -8,6 +8,20 @@ import {
   Save,
   MousePointer2,
   PenLine,
+  Undo2,
+  Redo2,
+  Layers,
+  Plus,
+  Trash2,
+  Eye,
+  EyeOff,
+  PaintBucket,
+  Pipette,
+  Grid,
+  Settings2,
+  Circle,
+  Square,
+  Triangle
 } from "lucide-react";
 
 interface Props {
@@ -17,44 +31,122 @@ interface Props {
   onSaveNote?: (title: string, data: any) => void;
 }
 
-const COLORS = [
-  "#000000",
-  "#ffffff",
-  "#ef4444",
-  "#f97316",
-  "#eab308",
-  "#22c55e",
-  "#3b82f6",
-  "#a855f7",
-  "#ec4899",
-];
-
 type Point = { x: number; y: number };
+type BrushType = "pencil" | "charcoal" | "watercolor" | "oil";
 type DrawingElement =
-  | { type: "path"; points: Point[]; color: string; width: number; isEraser: boolean }
-  | { type: "shape"; shapeType: string; start: Point; end: Point; color: string; width: number; sides: number };
+  | { type: "path"; points: Point[]; color: string; width: number; opacity: number; brushType: BrushType; blendMode: string; isEraser: boolean }
+  | { type: "shape"; shapeType: string; start: Point; end: Point; color: string; width: number; opacity: number; isFilled: boolean; sides: number };
+
+interface Layer {
+  id: string;
+  name: string;
+  visible: boolean;
+  opacity: number;
+  blendMode: string;
+  elements: DrawingElement[];
+}
 
 export function DrawingApp({ lang, onBack, initialData, onSaveNote }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [elements, setElements] = useState<DrawingElement[]>([]);
+
+  // Layers & History
+  const [layers, setLayers] = useState<Layer[]>([
+    { id: "layer-1", name: "Layer 1", visible: true, opacity: 1, blendMode: "source-over", elements: [] }
+  ]);
+  const [activeLayerId, setActiveLayerId] = useState<string>("layer-1");
+  const [history, setHistory] = useState<Layer[][]>([]);
+  const [historyStep, setHistoryStep] = useState(-1);
+
+  // Current Input
   const [currentElement, setCurrentElement] = useState<DrawingElement | null>(null);
-  
+
+  // Tools & Settings
+  const [tool, setTool] = useState<"draw" | "pan" | "eraser" | "shape" | "fill" | "picker">("draw");
+  const [brushType, setBrushType] = useState<BrushType>("pencil");
   const [color, setColor] = useState("#000000");
   const [lineWidth, setLineWidth] = useState(5);
-  const [tool, setTool] = useState<"draw" | "pan" | "eraser" | "shape">("draw");
-  const [shapeType, setShapeType] = useState<"rect" | "circle" | "line" | "triangle" | "star" | "polygon">("rect");
-  const [polygonSides, setPolygonSides] = useState(5);
-  
+  const [brushOpacity, setBrushOpacity] = useState(1);
+  const [shapeType, setShapeType] = useState<"rect" | "circle" | "triangle">("rect");
+  const [isShapeFilled, setIsShapeFilled] = useState(false);
+  const [showGrid, setShowGrid] = useState(false);
+
   // Viewport state
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
-  
-  // Interaction state
   const [isInteracting, setIsInteracting] = useState(false);
   const [lastPanPoint, setLastPanPoint] = useState<Point | null>(null);
 
-  // Resize observer to keep canvas matching container size
+  // Auto-save history
+  const saveHistory = useCallback((newLayers: Layer[]) => {
+    const newHistory = history.slice(0, historyStep + 1);
+    newHistory.push(JSON.parse(JSON.stringify(newLayers)));
+    if (newHistory.length > 50) newHistory.shift(); // Max 50 steps
+    setHistory(newHistory);
+    setHistoryStep(newHistory.length - 1);
+  }, [history, historyStep]);
+
+  // Init history
+  useEffect(() => {
+    if (history.length === 0) {
+      saveHistory(layers);
+    }
+  }, []);
+
+  const undo = () => {
+    if (historyStep > 0) {
+      setHistoryStep(historyStep - 1);
+      setLayers(JSON.parse(JSON.stringify(history[historyStep - 1])));
+    }
+  };
+
+  const redo = () => {
+    if (historyStep < history.length - 1) {
+      setHistoryStep(historyStep + 1);
+      setLayers(JSON.parse(JSON.stringify(history[historyStep + 1])));
+    }
+  };
+
+  // Layer Management
+  const addLayer = () => {
+    const newLayer = {
+      id: `layer-${Date.now()}`,
+      name: `Layer ${layers.length + 1}`,
+      visible: true,
+      opacity: 1,
+      blendMode: "source-over",
+      elements: []
+    };
+    const newLayers = [newLayer, ...layers];
+    setLayers(newLayers);
+    setActiveLayerId(newLayer.id);
+    saveHistory(newLayers);
+  };
+
+  const deleteLayer = (id: string) => {
+    if (layers.length <= 1) return;
+    const newLayers = layers.filter(l => l.id !== id);
+    setLayers(newLayers);
+    if (activeLayerId === id) setActiveLayerId(newLayers[0].id);
+    saveHistory(newLayers);
+  };
+
+  const toggleLayerVisibility = (id: string) => {
+    const newLayers = layers.map(l => l.id === id ? { ...l, visible: !l.visible } : l);
+    setLayers(newLayers);
+    saveHistory(newLayers);
+  };
+
+  const updateLayerOpacity = (id: string, opacity: number) => {
+    const newLayers = layers.map(l => l.id === id ? { ...l, opacity } : l);
+    setLayers(newLayers);
+  };
+
+  const commitLayerOpacity = () => {
+    saveHistory(layers);
+  };
+
+  // Resize observer
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -63,9 +155,9 @@ export function DrawingApp({ lang, onBack, initialData, onSaveNote }: Props) {
     });
     observer.observe(container);
     return () => observer.disconnect();
-  }, [elements, currentElement, pan, zoom]);
+  }, [layers, currentElement, pan, zoom, showGrid]);
 
-  const drawShapePath = (ctx: CanvasRenderingContext2D, type: string, start: Point, end: Point, sides: number) => {
+  const drawShapePath = (ctx: CanvasRenderingContext2D, type: string, start: Point, end: Point) => {
     const width = end.x - start.x;
     const height = end.y - start.y;
     const radius = Math.sqrt(width * width + height * height);
@@ -75,35 +167,10 @@ export function DrawingApp({ lang, onBack, initialData, onSaveNote }: Props) {
       ctx.rect(start.x, start.y, width, height);
     } else if (type === "circle") {
       ctx.arc(start.x, start.y, radius, 0, Math.PI * 2);
-    } else if (type === "line") {
-      ctx.moveTo(start.x, start.y);
-      ctx.lineTo(end.x, end.y);
     } else if (type === "triangle") {
       ctx.moveTo(start.x + width / 2, start.y);
       ctx.lineTo(start.x, end.y);
       ctx.lineTo(end.x, end.y);
-      ctx.closePath();
-    } else if (type === "polygon") {
-      const s = Math.max(3, sides);
-      for (let i = 0; i < s; i++) {
-        const angle = (i * 2 * Math.PI) / s - Math.PI / 2;
-        const px = start.x + radius * Math.cos(angle);
-        const py = start.y + radius * Math.sin(angle);
-        if (i === 0) ctx.moveTo(px, py);
-        else ctx.lineTo(px, py);
-      }
-      ctx.closePath();
-    } else if (type === "star") {
-      const points = Math.max(3, sides);
-      const innerRadius = radius / 2;
-      for (let i = 0; i < points * 2; i++) {
-        const r = i % 2 === 0 ? radius : innerRadius;
-        const angle = (i * Math.PI) / points - Math.PI / 2;
-        const px = start.x + r * Math.cos(angle);
-        const py = start.y + r * Math.sin(angle);
-        if (i === 0) ctx.moveTo(px, py);
-        else ctx.lineTo(px, py);
-      }
       ctx.closePath();
     }
   };
@@ -115,7 +182,6 @@ export function DrawingApp({ lang, onBack, initialData, onSaveNote }: Props) {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // Match physical size
     if (canvas.width !== container.clientWidth) canvas.width = container.clientWidth;
     if (canvas.height !== container.clientHeight) canvas.height = container.clientHeight;
 
@@ -125,34 +191,83 @@ export function DrawingApp({ lang, onBack, initialData, onSaveNote }: Props) {
     ctx.translate(pan.x, pan.y);
     ctx.scale(zoom, zoom);
 
+    // Draw Grid
+    if (showGrid) {
+      ctx.save();
+      ctx.strokeStyle = "rgba(150, 150, 150, 0.2)";
+      ctx.lineWidth = 1 / zoom;
+      const step = 50;
+      const startX = -pan.x / zoom;
+      const startY = -pan.y / zoom;
+      const endX = startX + canvas.width / zoom;
+      const endY = startY + canvas.height / zoom;
+      
+      ctx.beginPath();
+      for (let x = Math.floor(startX / step) * step; x < endX; x += step) {
+        ctx.moveTo(x, startY);
+        ctx.lineTo(x, endY);
+      }
+      for (let y = Math.floor(startY / step) * step; y < endY; y += step) {
+        ctx.moveTo(startX, y);
+        ctx.lineTo(endX, y);
+      }
+      ctx.stroke();
+      ctx.restore();
+    }
+
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
 
-    const allElements = currentElement ? [...elements, currentElement] : elements;
+    // Draw Layers bottom to top
+    const reversedLayers = [...layers].reverse();
 
-    for (const el of allElements) {
-      ctx.beginPath();
-      ctx.lineWidth = el.width;
-      if (el.type === "path") {
-        ctx.globalCompositeOperation = el.isEraser ? "destination-out" : "source-over";
-        ctx.strokeStyle = el.isEraser ? "rgba(0,0,0,1)" : el.color;
-        if (el.points.length > 0) {
-          ctx.moveTo(el.points[0].x, el.points[0].y);
-          for (let i = 1; i < el.points.length; i++) {
-            ctx.lineTo(el.points[i].x, el.points[i].y);
+    for (const layer of reversedLayers) {
+      if (!layer.visible) continue;
+      
+      ctx.save();
+      ctx.globalAlpha = layer.opacity;
+      ctx.globalCompositeOperation = layer.blendMode as GlobalCompositeOperation;
+
+      const layerElements = layer.id === activeLayerId && currentElement ? [...layer.elements, currentElement] : layer.elements;
+
+      for (const el of layerElements) {
+        ctx.save();
+        ctx.globalAlpha = el.opacity * layer.opacity;
+        ctx.lineWidth = el.width;
+        
+        if (el.type === "path") {
+          ctx.globalCompositeOperation = el.isEraser ? "destination-out" : (el.blendMode as GlobalCompositeOperation || "source-over");
+          ctx.strokeStyle = el.isEraser ? "rgba(0,0,0,1)" : el.color;
+          
+          if (el.brushType === "watercolor") {
+             ctx.filter = "blur(2px)";
+          } else if (el.brushType === "charcoal") {
+             ctx.filter = "noise(10%)"; // Simulated via slight variations if possible, skipping complex filters for standard canvas
           }
-          ctx.stroke();
+          
+          if (el.points.length > 0) {
+            ctx.beginPath();
+            ctx.moveTo(el.points[0].x, el.points[0].y);
+            for (let i = 1; i < el.points.length; i++) {
+              ctx.lineTo(el.points[i].x, el.points[i].y);
+            }
+            ctx.stroke();
+          }
+        } else if (el.type === "shape") {
+          ctx.globalCompositeOperation = "source-over";
+          ctx.strokeStyle = el.color;
+          ctx.fillStyle = el.color;
+          drawShapePath(ctx, el.shapeType, el.start, el.end);
+          if (el.isFilled) ctx.fill();
+          else ctx.stroke();
         }
-      } else if (el.type === "shape") {
-        ctx.globalCompositeOperation = "source-over";
-        ctx.strokeStyle = el.color;
-        drawShapePath(ctx, el.shapeType, el.start, el.end, el.sides);
-        ctx.stroke();
+        ctx.restore();
       }
+      ctx.restore();
     }
 
     ctx.restore();
-  }, [elements, currentElement, pan, zoom]);
+  }, [layers, currentElement, pan, zoom, activeLayerId, showGrid]);
 
   useEffect(() => {
     renderCanvas();
@@ -189,6 +304,9 @@ export function DrawingApp({ lang, onBack, initialData, onSaveNote }: Props) {
           points: [pos],
           color,
           width: lineWidth,
+          opacity: brushOpacity,
+          brushType,
+          blendMode: "source-over",
           isEraser: tool === "eraser"
         });
       } else if (tool === "shape") {
@@ -199,7 +317,9 @@ export function DrawingApp({ lang, onBack, initialData, onSaveNote }: Props) {
           end: pos,
           color,
           width: lineWidth,
-          sides: polygonSides
+          opacity: brushOpacity,
+          isFilled: isShapeFilled,
+          sides: 4
         });
       }
     }
@@ -236,25 +356,21 @@ export function DrawingApp({ lang, onBack, initialData, onSaveNote }: Props) {
     setIsInteracting(false);
     setLastPanPoint(null);
     if (currentElement) {
-      setElements(prev => [...prev, currentElement]);
+      const newLayers = layers.map(l => {
+        if (l.id === activeLayerId) {
+          return { ...l, elements: [...l.elements, currentElement] };
+        }
+        return l;
+      });
+      setLayers(newLayers);
       setCurrentElement(null);
-    }
-  };
-
-  const handleWheel = (e: React.WheelEvent) => {
-    if (e.ctrlKey || e.metaKey) {
-      e.preventDefault();
-      const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
-      setZoom(z => Math.min(Math.max(0.1, z * zoomFactor), 10));
-    } else {
-      setPan(prev => ({ x: prev.x - e.deltaX, y: prev.y - e.deltaY }));
+      saveHistory(newLayers);
     }
   };
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    // Prevent default wheel behavior for zooming
     const handleNativeWheel = (e: WheelEvent) => {
       e.preventDefault();
       const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
@@ -268,34 +384,9 @@ export function DrawingApp({ lang, onBack, initialData, onSaveNote }: Props) {
     return () => canvas.removeEventListener("wheel", handleNativeWheel);
   }, []);
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.code === "Space" && tool !== "pan") {
-        setTool("pan");
-      }
-    };
-    const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.code === "Space" && tool === "pan") {
-        setTool("draw");
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("keyup", handleKeyUp);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("keyup", handleKeyUp);
-    };
-  }, [tool]);
-
-  const clearCanvas = () => {
-    setElements([]);
-    setCurrentElement(null);
-  };
-
   const downloadCanvas = () => {
     const canvas = canvasRef.current;
     if (canvas) {
-      // Create a temporary canvas with white background
       const tempCanvas = document.createElement("canvas");
       tempCanvas.width = canvas.width;
       tempCanvas.height = canvas.height;
@@ -307,7 +398,7 @@ export function DrawingApp({ lang, onBack, initialData, onSaveNote }: Props) {
         
         const dataUrl = tempCanvas.toDataURL("image/png");
         const link = document.createElement("a");
-        link.download = "drawing.png";
+        link.download = "drawing_export.png";
         link.href = dataUrl;
         link.click();
       }
@@ -325,179 +416,210 @@ export function DrawingApp({ lang, onBack, initialData, onSaveNote }: Props) {
         ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
         ctx.drawImage(canvasRef.current, 0, 0);
         const dataUrl = tempCanvas.toDataURL("image/png");
-        onSaveNote(lang === "ar" ? "رسمة" : "Drawing", dataUrl);
+        onSaveNote(lang === "ar" ? "لوحة فنية" : "Artwork", dataUrl);
       }
     }
   };
 
+  const ToolbarBtn = ({ icon: Icon, active, onClick, title }: any) => (
+    <button
+      onClick={onClick}
+      title={title}
+      className={`p-3 rounded-xl flex items-center justify-center transition-all ${
+        active 
+          ? "bg-blue-600 text-white shadow-lg shadow-blue-500/30 scale-105" 
+          : "bg-white dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-700"
+      }`}
+    >
+      <Icon className="w-5 h-5" />
+    </button>
+  );
+
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-neutral-900 w-full relative">
-      <header className="p-4 flex flex-wrap gap-4 items-center justify-between border-b border-neutral-200 dark:border-neutral-800">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={onBack}
-            className="p-2 bg-neutral-100 dark:bg-neutral-800 rounded-full text-neutral-600 dark:text-neutral-300"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <h2 className="text-lg font-bold text-neutral-900 dark:text-white hidden sm:block">
-            {lang === "ar" ? "برنامج الرسم" : "Drawing"}
-          </h2>
-        </div>
-        
-        <div className="flex flex-wrap gap-2 items-center justify-center flex-1">
-          <div className="flex bg-neutral-100 dark:bg-neutral-800 rounded-lg overflow-hidden border border-neutral-200 dark:border-neutral-700 shadow-sm">
-            <button
-              onClick={() => setTool("draw")}
-              className={`p-2 transition-colors ${tool === "draw" ? "bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400" : "text-neutral-500 hover:bg-neutral-200 dark:hover:bg-neutral-700"}`}
-              title={lang === "ar" ? "رسم" : "Draw"}
-            >
-              <PenLine className="w-5 h-5" />
-            </button>
-            <button
-              onClick={() => setTool("eraser")}
-              className={`p-2 transition-colors ${tool === "eraser" ? "bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400" : "text-neutral-500 hover:bg-neutral-200 dark:hover:bg-neutral-700"}`}
-              title={lang === "ar" ? "ممحاة" : "Eraser"}
-            >
-              <Eraser className="w-5 h-5" />
-            </button>
-            <button
-              onClick={() => setTool("shape")}
-              className={`p-2 transition-colors ${tool === "shape" ? "bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400" : "text-neutral-500 hover:bg-neutral-200 dark:hover:bg-neutral-700"}`}
-              title={lang === "ar" ? "أشكال" : "Shapes"}
-            >
-              <div className="w-4 h-4 border-2 border-current rounded-sm" />
-            </button>
-            <button
-              onClick={() => setTool("pan")}
-              className={`p-2 transition-colors ${tool === "pan" ? "bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400" : "text-neutral-500 hover:bg-neutral-200 dark:hover:bg-neutral-700"}`}
-              title={lang === "ar" ? "تحريك" : "Pan"}
-            >
-              <MousePointer2 className="w-5 h-5" />
-            </button>
-          </div>
-          
-          <div className="flex bg-neutral-100 dark:bg-neutral-800 rounded-lg overflow-hidden border border-neutral-200 dark:border-neutral-700 items-center px-1 shadow-sm">
-            <button onClick={() => setZoom(z => Math.max(0.1, z - 0.1))} className="p-2 text-neutral-500 hover:text-neutral-900 dark:hover:text-white font-bold text-lg leading-none">-</button>
-            <span className="text-xs font-mono w-12 text-center text-neutral-700 dark:text-neutral-300">{Math.round(zoom * 100)}%</span>
-            <button onClick={() => setZoom(z => Math.min(10, z + 0.1))} className="p-2 text-neutral-500 hover:text-neutral-900 dark:hover:text-white font-bold text-lg leading-none">+</button>
-          </div>
+    <div className="flex h-screen bg-neutral-100 dark:bg-neutral-950 w-full font-sans overflow-hidden text-neutral-900 dark:text-neutral-100">
+      
+      {/* Left Toolbar */}
+      <div className="w-20 border-r border-neutral-200 dark:border-neutral-800 bg-white/50 dark:bg-neutral-900/50 backdrop-blur-xl flex flex-col items-center py-6 gap-4 z-20 shadow-xl">
+        <button onClick={onBack} className="p-3 mb-4 rounded-xl text-neutral-500 hover:bg-neutral-200 dark:hover:bg-neutral-800">
+          <ArrowLeft className="w-6 h-6" />
+        </button>
+
+        <div className="flex flex-col gap-2 w-full px-3">
+          <ToolbarBtn icon={PenLine} active={tool === "draw"} onClick={() => setTool("draw")} title="Brush" />
+          <ToolbarBtn icon={Eraser} active={tool === "eraser"} onClick={() => setTool("eraser")} title="Eraser" />
+          <ToolbarBtn icon={Square} active={tool === "shape"} onClick={() => setTool("shape")} title="Shapes" />
+          <ToolbarBtn icon={PaintBucket} active={tool === "fill"} onClick={() => setTool("fill")} title="Fill" />
+          <ToolbarBtn icon={Pipette} active={tool === "picker"} onClick={() => setTool("picker")} title="Color Picker" />
+          <ToolbarBtn icon={MousePointer2} active={tool === "pan"} onClick={() => setTool("pan")} title="Pan Canvas" />
         </div>
 
-        <div className="flex items-center gap-2">
-          {onSaveNote && (
-            <button
-              onClick={saveToNote}
-              className="flex items-center gap-2 p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-sm"
-              title={lang === "ar" ? "حفظ كملاحظة" : "Save as Note"}
-            >
-              <Save className="w-5 h-5" />
-            </button>
-          )}
-          <button
-            onClick={downloadCanvas}
-            className="p-2 text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 rounded-full hover:bg-neutral-200 dark:hover:bg-neutral-700"
-            title={lang === "ar" ? "تحميل" : "Download"}
-          >
-            <Download className="w-5 h-5" />
+        <div className="mt-auto flex flex-col gap-2 w-full px-3">
+          <button onClick={undo} disabled={historyStep <= 0} className="p-3 rounded-xl flex justify-center text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-800 disabled:opacity-30">
+            <Undo2 className="w-5 h-5" />
           </button>
-          <button
-            onClick={clearCanvas}
-            className="p-2 text-red-500 bg-red-100 dark:bg-red-900/30 rounded-full hover:bg-red-200 dark:hover:bg-red-900/50"
-            title={lang === "ar" ? "مسح" : "Clear"}
-          >
-            <Eraser className="w-5 h-5" />
+          <button onClick={redo} disabled={historyStep >= history.length - 1} className="p-3 rounded-xl flex justify-center text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-800 disabled:opacity-30">
+            <Redo2 className="w-5 h-5" />
           </button>
         </div>
-      </header>
-
-      {tool === "shape" && (
-        <div className="p-2 border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 flex justify-center gap-2 items-center flex-wrap">
-          <select 
-            value={shapeType} 
-            onChange={e => setShapeType(e.target.value as any)}
-            className="px-2 py-1 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded text-sm text-neutral-800 dark:text-neutral-200 focus:outline-none focus:border-blue-500"
-          >
-            <option value="rect">{lang === "ar" ? "مستطيل" : "Rectangle"}</option>
-            <option value="circle">{lang === "ar" ? "دائرة" : "Circle"}</option>
-            <option value="line">{lang === "ar" ? "خط مستقيم" : "Line"}</option>
-            <option value="triangle">{lang === "ar" ? "مثلث" : "Triangle"}</option>
-            <option value="polygon">{lang === "ar" ? "مضلع" : "Polygon"}</option>
-            <option value="star">{lang === "ar" ? "نجمة" : "Star"}</option>
-          </select>
-          
-          {(shapeType === "polygon" || shapeType === "star") && (
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-neutral-600 dark:text-neutral-400">{lang === "ar" ? "عدد الأضلاع/النقاط:" : "Sides/Points:"}</span>
-              <input 
-                type="number" 
-                min="3" max="20" 
-                value={polygonSides} 
-                onChange={e => setPolygonSides(Number(e.target.value))}
-                className="w-16 px-2 py-1 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded text-sm text-neutral-800 dark:text-neutral-200 focus:outline-none focus:border-blue-500"
-              />
-            </div>
-          )}
-        </div>
-      )}
-
-      <div
-        ref={containerRef}
-        className="flex-1 overflow-hidden bg-neutral-200 dark:bg-neutral-950 relative"
-      >
-        <canvas
-          ref={canvasRef}
-          className={`absolute inset-0 block bg-white dark:bg-neutral-900 touch-none ${tool === "pan" ? (isInteracting ? "cursor-grabbing" : "cursor-grab") : "cursor-crosshair"}`}
-          onMouseDown={handlePointerDown}
-          onMouseMove={handlePointerMove}
-          onMouseUp={handlePointerUp}
-          onMouseOut={handlePointerUp}
-          onTouchStart={handlePointerDown}
-          onTouchMove={handlePointerMove}
-          onTouchEnd={handlePointerUp}
-        />
       </div>
 
-      <div className="p-4 border-t border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 flex flex-col gap-4 z-10">
-        <div className="flex justify-center gap-4 flex-wrap items-center">
-          <div className="flex items-center gap-2">
-            <label className="text-sm text-neutral-600 dark:text-neutral-400">{lang === "ar" ? "اللون:" : "Color:"}</label>
+      {/* Main Canvas Area */}
+      <div className="flex-1 flex flex-col relative">
+        {/* Top Properties Bar */}
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-md border border-neutral-200 dark:border-neutral-800 rounded-2xl px-6 py-3 flex items-center gap-6 shadow-xl z-20">
+          
+          <div className="flex items-center gap-3">
             <input 
               type="color" 
               value={color} 
               onChange={e => setColor(e.target.value)}
-              className="w-10 h-10 p-0 border-0 rounded-lg cursor-pointer bg-transparent"
+              className="w-8 h-8 rounded-full border-2 border-neutral-200 dark:border-neutral-700 cursor-pointer overflow-hidden p-0"
             />
-          </div>
-          
-          <div className="flex justify-center gap-1 flex-wrap border-l border-neutral-200 dark:border-neutral-700 pl-4">
-            {COLORS.map((c) => (
-              <button
-                key={c}
-                onClick={() => setColor(c)}
-                className={`w-6 h-6 rounded-full border-2 ${color === c ? "border-neutral-900 dark:border-white scale-110" : "border-neutral-300 dark:border-neutral-600"} transition-all`}
-                style={{ backgroundColor: c }}
+            <div className="h-6 w-[1px] bg-neutral-300 dark:bg-neutral-700" />
+            
+            <div className="flex flex-col gap-1 w-32">
+              <div className="flex justify-between text-[10px] text-neutral-500 uppercase tracking-wider font-semibold">
+                <span>Size</span>
+                <span>{lineWidth}px</span>
+              </div>
+              <input
+                type="range"
+                min="1" max="100"
+                value={lineWidth}
+                onChange={(e) => setLineWidth(Number(e.target.value))}
+                className="w-full h-1.5 bg-neutral-200 dark:bg-neutral-700 rounded-full appearance-none accent-blue-600"
               />
-            ))}
+            </div>
+
+            <div className="flex flex-col gap-1 w-32">
+              <div className="flex justify-between text-[10px] text-neutral-500 uppercase tracking-wider font-semibold">
+                <span>Opacity</span>
+                <span>{Math.round(brushOpacity * 100)}%</span>
+              </div>
+              <input
+                type="range"
+                min="0.01" max="1" step="0.01"
+                value={brushOpacity}
+                onChange={(e) => setBrushOpacity(Number(e.target.value))}
+                className="w-full h-1.5 bg-neutral-200 dark:bg-neutral-700 rounded-full appearance-none accent-blue-600"
+              />
+            </div>
+          </div>
+
+          <div className="h-6 w-[1px] bg-neutral-300 dark:bg-neutral-700" />
+
+          {tool === "draw" && (
+            <select 
+              value={brushType} 
+              onChange={e => setBrushType(e.target.value as BrushType)}
+              className="bg-transparent text-sm font-medium focus:outline-none"
+            >
+              <option value="pencil">Pencil</option>
+              <option value="charcoal">Charcoal</option>
+              <option value="watercolor">Watercolor</option>
+              <option value="oil">Oil Paint</option>
+            </select>
+          )}
+
+          {tool === "shape" && (
+            <div className="flex items-center gap-4">
+              <select 
+                value={shapeType} 
+                onChange={e => setShapeType(e.target.value as any)}
+                className="bg-transparent text-sm font-medium focus:outline-none"
+              >
+                <option value="rect">Rectangle</option>
+                <option value="circle">Circle</option>
+                <option value="triangle">Triangle</option>
+              </select>
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={isShapeFilled} onChange={e => setIsShapeFilled(e.target.checked)} className="rounded text-blue-600" />
+                Filled
+              </label>
+            </div>
+          )}
+
+          <div className="flex items-center gap-2 ml-4">
+            <button onClick={() => setShowGrid(!showGrid)} className={`p-2 rounded-lg transition-colors ${showGrid ? "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400" : "hover:bg-neutral-100 dark:hover:bg-neutral-800"}`} title="Toggle Grid">
+              <Grid className="w-4 h-4" />
+            </button>
+            <button onClick={downloadCanvas} className="p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors" title="Export PNG">
+              <Download className="w-4 h-4" />
+            </button>
+            {onSaveNote && (
+              <button onClick={saveToNote} className="p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-blue-600 dark:text-blue-400" title="Save to Notes">
+                <Save className="w-4 h-4" />
+              </button>
+            )}
           </div>
         </div>
-        <div className="flex items-center gap-4 max-w-md mx-auto w-full">
-          <span className="text-sm text-neutral-600 dark:text-neutral-400">
-            {lang === "ar" ? "الحجم:" : "Size:"}
-          </span>
-          <input
-            type="range"
-            min="1"
-            max="50"
-            value={lineWidth}
-            onChange={(e) => setLineWidth(Number(e.target.value))}
-            className="flex-1"
+
+        <div
+          ref={containerRef}
+          className="flex-1 overflow-hidden relative cursor-crosshair bg-neutral-200/50 dark:bg-neutral-900/50"
+        >
+          <canvas
+            ref={canvasRef}
+            className={`absolute inset-0 block bg-white dark:bg-neutral-950 touch-none ${tool === "pan" ? (isInteracting ? "cursor-grabbing" : "cursor-grab") : "cursor-crosshair"}`}
+            onMouseDown={handlePointerDown}
+            onMouseMove={handlePointerMove}
+            onMouseUp={handlePointerUp}
+            onMouseOut={handlePointerUp}
+            onTouchStart={handlePointerDown}
+            onTouchMove={handlePointerMove}
+            onTouchEnd={handlePointerUp}
           />
-          <span className="text-sm font-mono text-neutral-600 dark:text-neutral-400 w-6">
-            {lineWidth}
-          </span>
         </div>
       </div>
+
+      {/* Right Layers Panel */}
+      <div className="w-64 border-l border-neutral-200 dark:border-neutral-800 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl flex flex-col z-20 shadow-xl">
+        <div className="p-4 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between">
+          <h3 className="font-bold flex items-center gap-2">
+            <Layers className="w-5 h-5 text-blue-600" />
+            Layers
+          </h3>
+          <button onClick={addLayer} className="p-1.5 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-md transition-colors">
+            <Plus className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-2">
+          {layers.map((layer) => (
+            <div 
+              key={layer.id} 
+              className={`p-3 rounded-xl border transition-all ${activeLayerId === layer.id ? "border-blue-500 bg-blue-50 dark:bg-blue-900/10 shadow-sm" : "border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 hover:border-neutral-300 dark:hover:border-neutral-700"}`}
+              onClick={() => setActiveLayerId(layer.id)}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-semibold truncate flex-1">{layer.name}</span>
+                <div className="flex items-center gap-1">
+                  <button onClick={(e) => { e.stopPropagation(); toggleLayerVisibility(layer.id); }} className="p-1 text-neutral-500 hover:text-neutral-900 dark:hover:text-white">
+                    {layer.visible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4 opacity-50" />}
+                  </button>
+                  <button onClick={(e) => { e.stopPropagation(); deleteLayer(layer.id); }} className="p-1 text-neutral-500 hover:text-red-500">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                <span className="text-[10px] uppercase text-neutral-500 w-12">Opacity</span>
+                <input 
+                  type="range" 
+                  min="0" max="1" step="0.05"
+                  value={layer.opacity}
+                  onChange={(e) => updateLayerOpacity(layer.id, Number(e.target.value))}
+                  onMouseUp={commitLayerOpacity}
+                  onTouchEnd={commitLayerOpacity}
+                  className="flex-1 h-1 bg-neutral-200 dark:bg-neutral-700 rounded-full appearance-none accent-neutral-600 dark:accent-neutral-400"
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
     </div>
   );
 }
