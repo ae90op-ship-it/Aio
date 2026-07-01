@@ -102,12 +102,9 @@ export default function App() {
   });
 
   useEffect(() => {
-    localStorage.setItem("trashedNotes", JSON.stringify(trashedNotes));
-  }, [trashedNotes]);
-
-  useEffect(() => {
     localStorage.setItem("notes", JSON.stringify(notes));
-  }, [notes]);
+    localStorage.setItem("trashedNotes", JSON.stringify(trashedNotes));
+  }, [notes, trashedNotes]);
 
   const handleOpenLauncher = () => setIsLauncherOpen(true);
   const handleCloseLauncher = () => setIsLauncherOpen(false);
@@ -120,37 +117,29 @@ export default function App() {
   const handleOpenCalendar = () => setIsCalendarOpen(true);
   const handleCloseCalendar = () => setIsCalendarOpen(false);
 
+  const appStateMap: Record<AppId, AppState> = {
+    clock: "CLOCK_OPEN",
+    calculator: "CALCULATOR_OPEN",
+    drawing: "DRAWING_OPEN",
+    compass: "COMPASS_OPEN",
+    passwords: "PASSWORDS_OPEN",
+    spreadsheets: "SPREADSHEETS_OPEN",
+    electron: "ELECTRON_OPEN",
+    imageresizer: "IMAGERESIZER_OPEN",
+    gallery: "GALLERY_OPEN",
+    videoplayer: "VIDEOPLAYER_OPEN",
+    videoeditor: "VIDEOEDITOR_OPEN",
+    audioeditor: "AUDIOEDITOR_OPEN",
+    notes: "TEXTNOTE_OPEN"
+  };
+
   const handleOpenApp = (appIdStr: string) => {
     const appId = appIdStr as AppId;
     setActiveAppId(appId);
     setIsLauncherOpen(false);
     
-    if (appId === "clock") {
-      setAppState("CLOCK_OPEN");
-    } else if (appId === "calculator") {
-      setAppState("CALCULATOR_OPEN");
-    } else if (appId === "drawing") {
-      setAppState("DRAWING_OPEN");
-    } else if (appId === "compass") {
-      setAppState("COMPASS_OPEN");
-    } else if (appId === "passwords") {
-      setAppState("PASSWORDS_OPEN");
-    } else if (appId === "spreadsheets") {
-      setAppState("SPREADSHEETS_OPEN");
-    } else if (appId === "electron") {
-      setAppState("ELECTRON_OPEN");
-    } else if (appId === "imageresizer") {
-      setAppState("IMAGERESIZER_OPEN");
-    } else if (appId === "gallery") {
-      setAppState("GALLERY_OPEN");
-    } else if (appId === "videoplayer") {
-      setAppState("VIDEOPLAYER_OPEN");
-    } else if (appId === "videoeditor") {
-      setAppState("VIDEOEDITOR_OPEN");
-    } else if (appId === "audioeditor") {
-      setAppState("AUDIOEDITOR_OPEN");
-    } else if (appId === "notes") {
-      setAppState("TEXTNOTE_OPEN");
+    if (appStateMap[appId]) {
+      setAppState(appStateMap[appId]);
     }
   };
 
@@ -218,21 +207,9 @@ export default function App() {
     
     setActiveNoteData(note.appData as Record<string, unknown> | null);
     
-    switch (note.appId as AppId) {
-      case "spreadsheets": setAppState("SPREADSHEETS_OPEN"); break;
-      case "drawing": setAppState("DRAWING_OPEN"); break;
-      case "clock": setAppState("CLOCK_OPEN"); break;
-      case "calculator": setAppState("CALCULATOR_OPEN"); break;
-      case "compass": setAppState("COMPASS_OPEN"); break;
-      case "passwords": setAppState("PASSWORDS_OPEN"); break;
-      case "electron": setAppState("ELECTRON_OPEN"); break;
-      case "imageresizer": setAppState("IMAGERESIZER_OPEN"); break;
-      case "gallery": setAppState("GALLERY_OPEN"); break;
-      case "videoplayer": setAppState("VIDEOPLAYER_OPEN"); break;
-      case "videoeditor": setAppState("VIDEOEDITOR_OPEN"); break;
-      case "audioeditor": setAppState("AUDIOEDITOR_OPEN"); break;
-      default:
-        break;
+    const targetState = appStateMap[note.appId as AppId];
+    if (targetState) {
+      setAppState(targetState);
     }
   };
 
@@ -248,6 +225,8 @@ export default function App() {
       setShowSecretCodesInfo(true);
     } else if (code === "1122") {
       setAppState("SECRET_NOTES");
+    } else if (code === "2580") {
+      setAppState("SECRET_NOTES");
     } else if (code === "1111") {
       setAppState("TETRIS_OPEN");
     } else if (code === "2222") {
@@ -257,8 +236,48 @@ export default function App() {
     }
   };
 
+  const [customThemeColor, setCustomThemeColor] = useState<string | null>(() => {
+    return localStorage.getItem("customThemeColor") || null;
+  });
+
+  useEffect(() => {
+    if (customThemeColor) {
+      localStorage.setItem("customThemeColor", customThemeColor);
+    } else {
+      localStorage.removeItem("customThemeColor");
+    }
+  }, [customThemeColor]);
+
   return (
     <ThemeProvider lang={lang} theme={theme}>
+      {customThemeColor && (
+        <style>{`
+          :root {
+            --color-blue-50: color-mix(in srgb, ${customThemeColor} 10%, white);
+            --color-blue-100: color-mix(in srgb, ${customThemeColor} 20%, white);
+            --color-blue-200: color-mix(in srgb, ${customThemeColor} 40%, white);
+            --color-blue-300: color-mix(in srgb, ${customThemeColor} 60%, white);
+            --color-blue-400: color-mix(in srgb, ${customThemeColor} 80%, white);
+            --color-blue-500: ${customThemeColor};
+            --color-blue-600: color-mix(in srgb, ${customThemeColor} 80%, black);
+            --color-blue-700: color-mix(in srgb, ${customThemeColor} 60%, black);
+            --color-blue-800: color-mix(in srgb, ${customThemeColor} 40%, black);
+            --color-blue-900: color-mix(in srgb, ${customThemeColor} 20%, black);
+          }
+          .dark {
+            --color-blue-50: color-mix(in srgb, ${customThemeColor} 10%, black);
+            --color-blue-100: color-mix(in srgb, ${customThemeColor} 20%, black);
+            --color-blue-200: color-mix(in srgb, ${customThemeColor} 40%, black);
+            --color-blue-300: color-mix(in srgb, ${customThemeColor} 60%, black);
+            --color-blue-400: color-mix(in srgb, ${customThemeColor} 80%, black);
+            --color-blue-500: ${customThemeColor};
+            --color-blue-600: color-mix(in srgb, ${customThemeColor} 80%, white);
+            --color-blue-700: color-mix(in srgb, ${customThemeColor} 60%, white);
+            --color-blue-800: color-mix(in srgb, ${customThemeColor} 40%, white);
+            --color-blue-900: color-mix(in srgb, ${customThemeColor} 20%, white);
+          }
+        `}</style>
+      )}
       <div className="w-full h-full flex-1 flex flex-col relative">
         <NotesInterface
           lang={lang}
@@ -403,6 +422,8 @@ export default function App() {
         onChangeLanguage={setLang}
         onChangeTheme={setTheme}
         onSecretCode={handleSecretCode}
+        customThemeColor={customThemeColor}
+        onChangeCustomThemeColor={setCustomThemeColor}
       />
 
       <CalendarModal

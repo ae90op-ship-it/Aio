@@ -110,6 +110,7 @@ export function CalendarModal({ lang, isOpen, onClose }: Props) {
       const date = new Date(year, month, d);
       const isToday = getDateKey(date) === getDateKey(new Date());
       const hasNote = !!calendarNotes[getDateKey(date)];
+      const noteContent = calendarNotes[getDateKey(date)];
 
       grid.push(
         <div 
@@ -118,11 +119,12 @@ export function CalendarModal({ lang, isOpen, onClose }: Props) {
             setCurrentDate(date);
             setViewType('day');
           }}
-          className={`relative p-2 flex flex-col items-center justify-center rounded-lg border cursor-pointer hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors ${isToday ? 'bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700' : 'bg-white dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700'}`}
+          title={noteContent ? noteContent.substring(0, 50) + (noteContent.length > 50 ? '...' : '') : ''}
+          className={`relative p-2 flex flex-col items-center justify-center rounded-lg border cursor-pointer hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-all duration-300 ${isToday ? 'bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700' : 'bg-white dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700'} ${hasNote ? 'ring-2 ring-blue-500/60 shadow-[0_0_12px_rgba(59,130,246,0.4)] border-transparent' : ''}`}
         >
-          <span className="text-sm font-bold text-neutral-800 dark:text-neutral-200">{d}</span>
+          <span className={`text-sm font-bold ${hasNote ? 'text-blue-600 dark:text-blue-400' : 'text-neutral-800 dark:text-neutral-200'}`}>{d}</span>
           <span className="text-xs text-neutral-500 dark:text-neutral-400 font-serif">{getHijriDay(date)}</span>
-          {hasNote && <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-blue-500"></div>}
+          {hasNote && <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)] animate-pulse"></div>}
         </div>
       );
     }
@@ -203,16 +205,38 @@ export function CalendarModal({ lang, isOpen, onClose }: Props) {
 
                   <div className="w-full h-px bg-neutral-200 dark:bg-neutral-800 my-4" />
 
-                  <div className="text-left" dir="auto">
-                    <h3 className="text-sm text-neutral-500 dark:text-neutral-400 font-medium mb-2">
-                      ملاحظات اليوم
-                    </h3>
-                    <textarea
-                      value={calendarNotes[currentKey] || ''}
-                      onChange={(e) => setCalendarNotes({ ...calendarNotes, [currentKey]: e.target.value })}
-                      placeholder="أضف ملاحظة مخصصة لهذا اليوم..."
-                      className="w-full h-32 p-3 bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-xl text-neutral-900 dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+                  <div className="text-left flex flex-col h-[200px]" dir="auto">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-sm text-neutral-500 dark:text-neutral-400 font-medium flex items-center gap-2">
+                        <CalendarIcon className="w-4 h-4" />
+                        {lang === 'ar' ? 'مركز التذكيرات السريعة' : 'Quick-Memo Reminder Hub'}
+                      </h3>
+                      {calendarNotes[currentKey] && (
+                        <span className="text-[10px] bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400 px-2 py-1 rounded-full font-bold">
+                          {lang === 'ar' ? 'نشط' : 'Active'}
+                        </span>
+                      )}
+                    </div>
+                    <div className="relative flex-1 group">
+                      <textarea
+                        value={calendarNotes[currentKey] || ''}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val) {
+                            setCalendarNotes({ ...calendarNotes, [currentKey]: val });
+                          } else {
+                            const newNotes = { ...calendarNotes };
+                            delete newNotes[currentKey];
+                            setCalendarNotes(newNotes);
+                          }
+                        }}
+                        placeholder={lang === 'ar' ? "أضف ملاحظة أو تذكير مخصص لهذا اليوم..." : "Add a custom note or reminder for this day..."}
+                        className="w-full h-full p-4 bg-white dark:bg-neutral-800/80 border border-neutral-300 dark:border-neutral-700 rounded-2xl text-neutral-900 dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-sm group-hover:shadow-md"
+                      />
+                      <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                        <CalendarIcon className="w-5 h-5 text-neutral-300 dark:text-neutral-600" />
+                      </div>
+                    </div>
                   </div>
                 </div>
               ) : (

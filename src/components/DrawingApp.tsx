@@ -21,7 +21,10 @@ import {
   Settings2,
   Circle,
   Square,
-  Triangle
+  Triangle,
+  Maximize2,
+  Minimize2,
+  Focus
 } from "lucide-react";
 
 interface Props {
@@ -49,6 +52,11 @@ interface Layer {
 export function DrawingApp({ lang, onBack, initialData, onSaveNote }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Layout states
+  const [isFullScreen, setIsFullScreen] = useState(false);
+  const [isZenMode, setIsZenMode] = useState(false);
+  const [zenHovered, setZenHovered] = useState(false);
 
   // Layers & History
   const [layers, setLayers] = useState<Layer[]>([
@@ -421,6 +429,11 @@ export function DrawingApp({ lang, onBack, initialData, onSaveNote }: Props) {
     }
   };
 
+  const handleSafeBack = () => {
+    saveToNote();
+    onBack();
+  };
+
   const ToolbarBtn = ({ icon: Icon, active, onClick, title }: any) => (
     <button
       onClick={onClick}
@@ -435,12 +448,27 @@ export function DrawingApp({ lang, onBack, initialData, onSaveNote }: Props) {
     </button>
   );
 
+  const showUI = !isZenMode || zenHovered;
+
   return (
-    <div className="flex h-screen bg-neutral-100 dark:bg-neutral-950 w-full font-sans overflow-hidden text-neutral-900 dark:text-neutral-100">
+    <div 
+      className={`flex bg-neutral-100 dark:bg-neutral-950 w-full font-sans overflow-hidden text-neutral-900 dark:text-neutral-100 ${isFullScreen ? 'fixed inset-0 z-50' : 'h-full'}`}
+    >
       
+      {/* Edge Hover Detector for Zen Mode */}
+      {isZenMode && !zenHovered && (
+        <div 
+          className="absolute inset-y-0 left-0 w-8 z-40"
+          onMouseEnter={() => setZenHovered(true)}
+        />
+      )}
+
       {/* Left Toolbar */}
-      <div className="w-20 border-r border-neutral-200 dark:border-neutral-800 bg-white/50 dark:bg-neutral-900/50 backdrop-blur-xl flex flex-col items-center py-6 gap-4 z-20 shadow-xl">
-        <button onClick={onBack} className="p-3 mb-4 rounded-xl text-neutral-500 hover:bg-neutral-200 dark:hover:bg-neutral-800">
+      <div 
+        className={`w-20 border-r border-neutral-200 dark:border-neutral-800 bg-white/50 dark:bg-neutral-900/50 backdrop-blur-xl flex flex-col items-center py-6 gap-4 z-20 shadow-xl transition-all duration-300 ${showUI ? 'translate-x-0' : '-translate-x-full absolute h-full'}`}
+        onMouseLeave={() => isZenMode && setZenHovered(false)}
+      >
+        <button onClick={handleSafeBack} className="p-3 mb-2 rounded-xl text-neutral-500 hover:bg-neutral-200 dark:hover:bg-neutral-800" title="Save & Exit">
           <ArrowLeft className="w-6 h-6" />
         </button>
 
@@ -454,6 +482,13 @@ export function DrawingApp({ lang, onBack, initialData, onSaveNote }: Props) {
         </div>
 
         <div className="mt-auto flex flex-col gap-2 w-full px-3">
+          <button onClick={() => setIsFullScreen(!isFullScreen)} className="p-3 rounded-xl flex justify-center text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-800" title={lang === 'ar' ? 'ملء الشاشة' : 'Full Screen'}>
+            {isFullScreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
+          </button>
+          <button onClick={() => { setIsZenMode(!isZenMode); setZenHovered(false); }} className={`p-3 rounded-xl flex justify-center ${isZenMode ? 'bg-blue-100 text-blue-600' : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-800'}`} title={lang === 'ar' ? 'إخفاء كل الأزرار' : 'Zen Mode'}>
+            <Focus className="w-5 h-5" />
+          </button>
+          <div className="h-px bg-neutral-200 dark:bg-neutral-800 w-full my-1" />
           <button onClick={undo} disabled={historyStep <= 0} className="p-3 rounded-xl flex justify-center text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-800 disabled:opacity-30">
             <Undo2 className="w-5 h-5" />
           </button>
@@ -466,7 +501,10 @@ export function DrawingApp({ lang, onBack, initialData, onSaveNote }: Props) {
       {/* Main Canvas Area */}
       <div className="flex-1 flex flex-col relative">
         {/* Top Properties Bar */}
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-md border border-neutral-200 dark:border-neutral-800 rounded-2xl px-6 py-3 flex items-center gap-6 shadow-xl z-20">
+        <div 
+          className={`absolute top-4 left-1/2 -translate-x-1/2 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-md border border-neutral-200 dark:border-neutral-800 rounded-2xl px-6 py-3 flex items-center gap-6 shadow-xl z-20 transition-all duration-300 ${showUI ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'}`}
+          onMouseEnter={() => isZenMode && setZenHovered(true)}
+        >
           
           <div className="flex items-center gap-3">
             <input 
@@ -573,7 +611,10 @@ export function DrawingApp({ lang, onBack, initialData, onSaveNote }: Props) {
       </div>
 
       {/* Right Layers Panel */}
-      <div className="w-64 border-l border-neutral-200 dark:border-neutral-800 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl flex flex-col z-20 shadow-xl">
+      <div 
+        className={`w-64 border-l border-neutral-200 dark:border-neutral-800 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl flex flex-col z-20 shadow-xl transition-all duration-300 ${showUI ? 'translate-x-0' : 'translate-x-full absolute right-0 h-full'}`}
+        onMouseLeave={() => isZenMode && setZenHovered(false)}
+      >
         <div className="p-4 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between">
           <h3 className="font-bold flex items-center gap-2">
             <Layers className="w-5 h-5 text-blue-600" />

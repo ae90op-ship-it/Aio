@@ -1,21 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Language } from "../types";
 import { translations } from "../i18n";
-import { 
-  ArrowLeft, 
-  Save, 
-  Bold, 
-  Italic, 
-  Underline, 
-  AlignLeft, 
-  AlignCenter, 
-  AlignRight, 
-  List, 
-  ListOrdered, 
-  CheckSquare, 
-  Download,
-  FileText
-} from "lucide-react";
+import { ArrowLeft, Save, Download, FileText, FileDown, ChevronDown, Volume2, Square } from "lucide-react";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 
@@ -44,24 +30,52 @@ export function TextNoteApp({ lang, onBack, initialData, onSaveNote }: Props) {
   const [title, setTitle] = useState(initialData?.title || "");
   const [content, setContent] = useState(initialData?.content || "");
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
-  const editorRef = useRef<HTMLDivElement>(null);
-  const [showExportMenu, setShowExportMenu] = useState(false);
+  const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  
+  const contentRef = useRef<HTMLDivElement>(null);
 
-  // Initialize content on first load
   useEffect(() => {
-    if (editorRef.current && initialData?.content && !editorRef.current.innerHTML) {
-      editorRef.current.innerHTML = initialData.content;
+    return () => {
+      if (window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
+
+  const handleReadAloud = () => {
+    if (!window.speechSynthesis) return;
+
+    if (isSpeaking) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+      return;
     }
-  }, [initialData]);
+
+    const textToSpeak = (title + ".\n" + content).trim();
+    if (!textToSpeak) return;
+
+    const utterance = new SpeechSynthesisUtterance(textToSpeak);
+    utterance.lang = lang === 'ar' ? 'ar-SA' : 'en-US';
+    
+    utterance.onend = () => {
+      setIsSpeaking(false);
+    };
+    
+    utterance.onerror = () => {
+      setIsSpeaking(false);
+    };
+
+    setIsSpeaking(true);
+    window.speechSynthesis.speak(utterance);
+  };
 
   const handleSave = useCallback(() => {
     if (onSaveNote) {
-      const currentContent = editorRef.current?.innerHTML || "";
-      onSaveNote(title || (lang === "ar" ? "ملاحظة جديدة" : "New Note"), { title, content: currentContent });
+      onSaveNote(title || (lang === "ar" ? "ملاحظة جديدة" : "New Note"), { title, content });
       setLastSaved(new Date());
-      setContent(currentContent);
     }
-  }, [onSaveNote, title, lang]);
+  }, [onSaveNote, title, content, lang]);
 
   // Auto-save every 30 seconds
   useEffect(() => {
@@ -71,135 +85,142 @@ export function TextNoteApp({ lang, onBack, initialData, onSaveNote }: Props) {
     return () => clearInterval(interval);
   }, [handleSave]);
 
-  const execCmd = (cmd: string, value: string = "") => {
-    document.execCommand(cmd, false, value);
-    editorRef.current?.focus();
-    if (editorRef.current) {
-      setContent(editorRef.current.innerHTML);
-    }
-  };
-
-  const insertCheckbox = () => {
-    const id = Math.random().toString(36).substr(2, 9);
-    const html = `<input type="checkbox" id="${id}" style="margin: 0 8px; cursor: pointer; transform: scale(1.2);" />&nbsp;`;
-    execCmd("insertHTML", html);
-  };
-
-  const handleInput = () => {
-    if (editorRef.current) {
-      setContent(editorRef.current.innerHTML);
-    }
-  };
-
-  const exportAsPDF = async () => {
-    setShowExportMenu(false);
-    if (!editorRef.current) return;
-    const canvas = await html2canvas(editorRef.current, { scale: 2 });
-    const imgData = canvas.toDataURL("image/png");
-    const pdf = new jsPDF("p", "mm", "a4");
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    // Add some margin
-    const margin = 10;
-    const effectiveWidth = pdfWidth - margin * 2;
-    const pdfHeight = (canvas.height * effectiveWidth) / canvas.width;
+  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    let newContent = e.target.value;
     
-    // Also print title
-    pdf.setFontSize(18);
-    pdf.text(title || (lang === "ar" ? "ملاحظة" : "Note"), margin, margin + 5);
+    // Autocorrect logic (trigger on space)
+    if (newContent.length > content.length && newContent.endsWith(" ")) {
+      const words = newContent.split(" ");
+      const lastWord = words[words.length - 2]; // because it ends with space
+      
+      if (lastWord) {
+        const lowerWord = lastWord.toLowerCase();
+        if (COMMON_TYPOS[lowerWord]) {
+          // Preserve case of first letter if it was capitalized
+          const isCapitalized = lastWord[0] === lastWord[0].toUpperCase();
+          let corrected = COMMON_TYPOS[lowerWord];
+          if (isCapitalized) {
+            corrected = corrected.charAt(0).toUpperCase() + corrected.slice(1);
+          }
+          words[words.length - 2] = corrected;
+          newContent = words.join(" ");
+        }
+      }
+    }
     
-    pdf.addImage(imgData, "PNG", margin, margin + 15, effectiveWidth, pdfHeight);
-    pdf.save(`${title || "Note"}.pdf`);
+    setContent(newContent);
   };
 
-  const exportAsTXT = () => {
-    setShowExportMenu(false);
-    if (!editorRef.current) return;
-    const text = editorRef.current.innerText;
-    const fullText = `${title}\n\n${text}`;
-    const blob = new Blob([fullText], { type: "text/plain;charset=utf-8" });
+  const exportAsText = () => {
+    const blob = new Blob([`${title}\n\n${content}`], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `${title || "Note"}.txt`;
+    link.download = `${title || "note"}.txt`;
+    document.body.appendChild(link);
     link.click();
+    document.body.removeChild(link);
     URL.revokeObjectURL(url);
+    setIsExportMenuOpen(false);
   };
 
-  const wordCount = editorRef.current?.innerText.trim() ? editorRef.current.innerText.trim().split(/\s+/).length : 0;
-  const charCount = editorRef.current?.innerText.length || 0;
+  const exportAsPDF = async () => {
+    if (!contentRef.current) return;
+    
+    setIsExportMenuOpen(false);
+    
+    try {
+      const canvas = await html2canvas(contentRef.current, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff", // Ensure solid white background for PDF readability
+      });
+      
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`${title || "note"}.pdf`);
+    } catch (error) {
+      console.error("PDF generation failed:", error);
+    }
+  };
+
+  const wordCount = content.trim() ? content.trim().split(/\s+/).length : 0;
+  const charCount = content.length;
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-neutral-900 w-full relative">
-      <header className="p-4 flex flex-wrap gap-4 items-center justify-between border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-950">
-        <div className="flex items-center gap-2">
+    <div className="flex flex-col h-full bg-neutral-50 dark:bg-neutral-900 w-full relative">
+      <header className="p-4 flex items-center justify-between border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950">
+        <button
+          onClick={onBack}
+          className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-full text-neutral-600 dark:text-neutral-400"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+        <div className="flex flex-col items-center">
+          <h2 className="text-lg font-bold text-neutral-900 dark:text-white">
+            {t.notes}
+          </h2>
+          {lastSaved && (
+            <span className="text-[10px] text-neutral-500">
+              {lang === "ar" ? "آخر حفظ: " : "Last saved: "} 
+              {lastSaved.toLocaleTimeString()}
+            </span>
+          )}
+        </div>
+        <div className="flex gap-2 relative">
           <button
-            onClick={onBack}
-            className="p-2 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded-full text-neutral-600 dark:text-neutral-400"
+            onClick={handleReadAloud}
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+              isSpeaking 
+                ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' 
+                : 'bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300'
+            }`}
+            title={isSpeaking ? (lang === 'ar' ? 'إيقاف القراءة' : 'Stop Reading') : (lang === 'ar' ? 'قراءة بصوت عالٍ' : 'Read Aloud')}
           >
-            <ArrowLeft className="w-5 h-5" />
+            {isSpeaking ? <Square className="w-4 h-4 fill-current" /> : <Volume2 className="w-4 h-4" />}
           </button>
-          <div className="flex flex-col hidden sm:flex">
-            <h2 className="text-lg font-bold text-neutral-900 dark:text-white">
-              {t.notes}
-            </h2>
-            {lastSaved && (
-              <span className="text-[10px] text-neutral-500">
-                {lang === "ar" ? "آخر حفظ: " : "Saved: "} 
-                {lastSaved.toLocaleTimeString()}
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Formatting Toolbar */}
-        <div className="flex flex-wrap items-center gap-1 bg-white dark:bg-neutral-800 p-1.5 rounded-xl border border-neutral-200 dark:border-neutral-700 shadow-sm flex-1 max-w-2xl justify-center">
-          <button onClick={() => execCmd("bold")} className="p-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded text-neutral-700 dark:text-neutral-300 transition-colors" title="Bold"><Bold className="w-4 h-4" /></button>
-          <button onClick={() => execCmd("italic")} className="p-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded text-neutral-700 dark:text-neutral-300 transition-colors" title="Italic"><Italic className="w-4 h-4" /></button>
-          <button onClick={() => execCmd("underline")} className="p-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded text-neutral-700 dark:text-neutral-300 transition-colors" title="Underline"><Underline className="w-4 h-4" /></button>
-          <div className="w-px h-5 bg-neutral-300 dark:bg-neutral-600 mx-1" />
-          <button onClick={() => execCmd("justifyLeft")} className="p-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded text-neutral-700 dark:text-neutral-300 transition-colors" title="Align Left"><AlignLeft className="w-4 h-4" /></button>
-          <button onClick={() => execCmd("justifyCenter")} className="p-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded text-neutral-700 dark:text-neutral-300 transition-colors" title="Align Center"><AlignCenter className="w-4 h-4" /></button>
-          <button onClick={() => execCmd("justifyRight")} className="p-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded text-neutral-700 dark:text-neutral-300 transition-colors" title="Align Right"><AlignRight className="w-4 h-4" /></button>
-          <div className="w-px h-5 bg-neutral-300 dark:bg-neutral-600 mx-1" />
-          <button onClick={() => execCmd("insertUnorderedList")} className="p-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded text-neutral-700 dark:text-neutral-300 transition-colors" title="Bullets"><List className="w-4 h-4" /></button>
-          <button onClick={() => execCmd("insertOrderedList")} className="p-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded text-neutral-700 dark:text-neutral-300 transition-colors" title="Numbers"><ListOrdered className="w-4 h-4" /></button>
-          <button onClick={insertCheckbox} className="p-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded text-neutral-700 dark:text-neutral-300 transition-colors" title="Checkbox"><CheckSquare className="w-4 h-4" /></button>
-          <div className="w-px h-5 bg-neutral-300 dark:bg-neutral-600 mx-1" />
-          <select onChange={(e) => execCmd("fontSize", e.target.value)} className="bg-transparent text-sm text-neutral-700 dark:text-neutral-300 focus:outline-none cursor-pointer p-1">
-            <option value="1">Small</option>
-            <option value="3" defaultValue="3">Normal</option>
-            <option value="5">Large</option>
-            <option value="7">Huge</option>
-          </select>
-          <input type="color" onChange={(e) => execCmd("foreColor", e.target.value)} className="w-6 h-6 p-0 border-0 rounded cursor-pointer bg-transparent" title="Text Color" />
-        </div>
-
-        <div className="flex gap-2 items-center relative">
           <div className="relative">
             <button
-              onClick={() => setShowExportMenu(!showExportMenu)}
-              className="p-2 text-neutral-600 hover:bg-neutral-200 dark:text-neutral-400 dark:hover:bg-neutral-800 rounded-full transition-colors"
-              title={lang === "ar" ? "تصدير" : "Export"}
+              onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}
+              className="flex items-center gap-2 px-3 py-2 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 rounded-lg transition-colors"
             >
-              <Download className="w-5 h-5" />
+              <Download className="w-4 h-4" />
+              <ChevronDown className="w-4 h-4 hidden sm:block" />
             </button>
-            {showExportMenu && (
-              <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-neutral-800 rounded-xl shadow-xl border border-neutral-200 dark:border-neutral-700 py-2 z-50">
-                <button onClick={exportAsPDF} className="w-full text-left px-4 py-2 hover:bg-neutral-100 dark:hover:bg-neutral-700 text-sm flex items-center gap-2">
-                  <FileText className="w-4 h-4" />
-                  {lang === "ar" ? "تصدير كملف PDF" : "Export as PDF"}
-                </button>
-                <button onClick={exportAsTXT} className="w-full text-left px-4 py-2 hover:bg-neutral-100 dark:hover:bg-neutral-700 text-sm flex items-center gap-2">
-                  <FileText className="w-4 h-4" />
-                  {lang === "ar" ? "تصدير كملف نصي" : "Export as TXT"}
-                </button>
-              </div>
+            {isExportMenuOpen && (
+              <>
+                <div 
+                  className="fixed inset-0 z-10" 
+                  onClick={() => setIsExportMenuOpen(false)} 
+                />
+                <div className={`absolute top-full mt-2 w-48 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl shadow-xl z-20 py-2 ${lang === 'ar' ? 'left-0' : 'right-0'}`}>
+                  <button 
+                    onClick={exportAsPDF}
+                    className="w-full text-start px-4 py-2 hover:bg-neutral-100 dark:hover:bg-neutral-700 text-sm flex items-center gap-3 text-neutral-700 dark:text-neutral-200"
+                  >
+                    <FileDown className="w-4 h-4 text-red-500" />
+                    {lang === 'ar' ? 'تصدير كـ PDF' : 'Export as PDF'}
+                  </button>
+                  <button 
+                    onClick={exportAsText}
+                    className="w-full text-start px-4 py-2 hover:bg-neutral-100 dark:hover:bg-neutral-700 text-sm flex items-center gap-3 text-neutral-700 dark:text-neutral-200"
+                  >
+                    <FileText className="w-4 h-4 text-blue-500" />
+                    {lang === 'ar' ? 'تصدير كـ Text' : 'Export as Text'}
+                  </button>
+                </div>
+              </>
             )}
           </div>
+          
           {onSaveNote && (
             <button
               onClick={handleSave}
-              className="flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors shadow-sm"
             >
               <Save className="w-4 h-4" />
               <span className="hidden sm:inline">{t.saveNote}</span>
@@ -208,29 +229,28 @@ export function TextNoteApp({ lang, onBack, initialData, onSaveNote }: Props) {
         </div>
       </header>
 
-      <main className="flex-1 p-6 sm:p-10 flex flex-col gap-6 overflow-y-auto items-center">
-        <div className="w-full max-w-3xl flex flex-col gap-4">
+      <main className="flex-1 p-6 flex flex-col gap-4 overflow-y-auto" ref={contentRef}>
+        <div className="max-w-4xl w-full mx-auto flex flex-col flex-1 h-full bg-white dark:bg-neutral-900 rounded-xl p-8 shadow-sm">
           <input
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder={t.noteTitlePlaceholder}
-            className="w-full bg-transparent text-3xl font-bold text-neutral-900 dark:text-white border-b border-transparent focus:border-neutral-300 dark:focus:border-neutral-700 pb-2 focus:outline-none transition-colors"
+            className="w-full bg-transparent text-3xl font-bold text-neutral-900 dark:text-white border-none focus:outline-none focus:ring-0 mb-6 placeholder:text-neutral-300 dark:placeholder:text-neutral-600"
           />
-          <div
-            ref={editorRef}
-            contentEditable
-            onInput={handleInput}
-            className="w-full min-h-[50vh] focus:outline-none text-lg text-neutral-800 dark:text-neutral-200 leading-relaxed outline-none"
-            style={{ paddingBottom: '50px' }}
+          <textarea
+            value={content}
+            onChange={handleContentChange}
+            placeholder={t.noteContentPlaceholder}
+            className="w-full flex-1 bg-transparent text-lg text-neutral-800 dark:text-neutral-200 border-none focus:outline-none focus:ring-0 resize-none leading-relaxed placeholder:text-neutral-400 dark:placeholder:text-neutral-600"
           />
         </div>
       </main>
 
-      <footer className="p-2 px-4 flex items-center justify-between border-t border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-950 text-xs text-neutral-500 dark:text-neutral-400">
-        <div className="flex gap-4">
-          <span>{wordCount} {lang === 'ar' ? 'كلمات' : 'words'}</span>
-          <span>{charCount} {lang === 'ar' ? 'حروف' : 'characters'}</span>
+      <footer className="p-3 px-6 flex items-center justify-between border-t border-neutral-200 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-950 text-xs font-medium text-neutral-500 dark:text-neutral-400">
+        <div className="flex gap-6">
+          <span className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-blue-500" />{wordCount} {lang === 'ar' ? 'كلمات' : 'words'}</span>
+          <span className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-green-500" />{charCount} {lang === 'ar' ? 'حروف' : 'characters'}</span>
         </div>
       </footer>
     </div>

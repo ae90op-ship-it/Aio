@@ -1,8 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Language, ThemeMode } from '../types';
 import { evaluate } from 'mathjs';
-import { ArrowLeft, Save, History, X } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { ArrowLeft, Save } from 'lucide-react';
 
 interface Props {
   lang: Language;
@@ -17,8 +16,6 @@ export function CalculatorApp({ lang, theme, onBack, onSaveNote, onSecretCode }:
   const [result, setResult] = useState('');
   const [isShift, setIsShift] = useState(false);
   const [isAlpha, setIsAlpha] = useState(false);
-  const [history, setHistory] = useState<{ input: string, result: string }[]>([]);
-  const [showHistory, setShowHistory] = useState(false);
   const displayRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -45,13 +42,7 @@ export function CalculatorApp({ lang, theme, onBack, onSaveNote, onSecretCode }:
   };
 
   const handleCalculate = () => {
-    if (input === '2580') {
-      setShowHistory(true);
-      setInput('');
-      return;
-    }
-
-    if (onSecretCode && (input === '00' || input === '1122' || input === '1111' || input === '2222' || input === '3333')) {
+    if (onSecretCode && (input === '00' || input === '1122' || input === '2580' || input === '1111' || input === '2222' || input === '3333')) {
       onSecretCode(input);
       return;
     }
@@ -67,7 +58,6 @@ export function CalculatorApp({ lang, theme, onBack, onSaveNote, onSecretCode }:
         
       const res = evaluate(mathInput);
       setResult(String(res));
-      setHistory(prev => [...prev, { input, result: String(res) }]);
     } catch (e) {
       setResult('Syntax ERROR');
     }
@@ -89,13 +79,6 @@ export function CalculatorApp({ lang, theme, onBack, onSaveNote, onSecretCode }:
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div className="flex gap-2">
-          <button
-            onClick={() => setShowHistory(true)}
-            className="p-2 text-neutral-600 hover:bg-neutral-200 dark:text-neutral-400 dark:hover:bg-neutral-800 rounded-full transition-colors"
-            title={lang === 'ar' ? 'السجل' : 'History'}
-          >
-            <History className="w-5 h-5" />
-          </button>
           {onSaveNote && (
             <button
               onClick={handleSave}
@@ -207,43 +190,6 @@ export function CalculatorApp({ lang, theme, onBack, onSaveNote, onSecretCode }:
           </div>
         </div>
       </div>
-
-      <AnimatePresence>
-        {showHistory && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-white/90 dark:bg-neutral-900/90 backdrop-blur-sm z-50 flex flex-col p-6"
-          >
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-neutral-900 dark:text-white">
-                {lang === 'ar' ? 'سجل العمليات' : 'History'}
-              </h2>
-              <button 
-                onClick={() => setShowHistory(false)}
-                className="p-2 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded-full text-neutral-600 dark:text-neutral-400"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto flex flex-col gap-4">
-              {history.length === 0 ? (
-                <div className="text-center text-neutral-500 mt-10">
-                  {lang === 'ar' ? 'لا يوجد سجل بعد' : 'No history yet'}
-                </div>
-              ) : (
-                history.map((h, i) => (
-                  <div key={i} className="bg-neutral-100 dark:bg-neutral-800 p-4 rounded-xl border border-neutral-200 dark:border-neutral-700">
-                    <div className="text-sm text-neutral-500 mb-1">{h.input}</div>
-                    <div className="text-lg font-bold text-neutral-900 dark:text-white text-right">= {h.result}</div>
-                  </div>
-                ))
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }

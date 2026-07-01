@@ -40,7 +40,9 @@ export function SettingsModal({
   onChangeLanguage,
   onChangeTheme,
   onSecretCode,
-}: Props) {
+  customThemeColor,
+  onChangeCustomThemeColor,
+}: Props & { customThemeColor: string | null, onChangeCustomThemeColor: (color: string | null) => void }) {
   const t = translations[lang];
   const [secretCode, setSecretCode] = useState("");
   const [showTrash, setShowTrash] = useState(false);
@@ -217,7 +219,7 @@ export function SettingsModal({
                     <p className="text-neutral-500 dark:text-neutral-400 text-sm mb-3">
                       {t.themeToggle}
                     </p>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 mb-3">
                       <button
                         onClick={() => onChangeTheme("light")}
                         className={`flex-1 p-3 flex justify-center items-center gap-2 rounded-xl transition-all ${theme === "light" ? "bg-blue-500/20 border border-blue-500/50 text-blue-600" : "bg-white dark:bg-neutral-700/50 text-neutral-800 dark:text-neutral-200 border border-neutral-200 dark:border-transparent"}`}
@@ -230,6 +232,35 @@ export function SettingsModal({
                       >
                         <Moon className="w-5 h-5" />
                       </button>
+                    </div>
+                    
+                    <div className="flex items-center gap-3 p-3 rounded-xl bg-white dark:bg-neutral-700/50 border border-neutral-200 dark:border-neutral-700">
+                      <div className="relative w-8 h-8 rounded-full overflow-hidden border-2 border-neutral-300 dark:border-neutral-600 shrink-0">
+                        <input
+                          type="color"
+                          value={customThemeColor || "#2563eb"}
+                          onChange={(e) => onChangeCustomThemeColor(e.target.value)}
+                          className="absolute inset-0 w-[200%] h-[200%] -translate-x-1/4 -translate-y-1/4 cursor-pointer p-0"
+                          title="Custom Theme Wheel Accent Trigger"
+                        />
+                      </div>
+                      <div className="flex flex-col flex-1">
+                        <span className="text-sm font-medium text-neutral-800 dark:text-neutral-200">
+                          {lang === 'ar' ? 'تخصيص اللون الأساسي' : 'Custom Accent Color'}
+                        </span>
+                        <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                          {lang === 'ar' ? 'اختر لون الثيم المفضل لديك' : 'Pick your preferred theme color'}
+                        </span>
+                      </div>
+                      {customThemeColor && (
+                        <button 
+                          onClick={() => onChangeCustomThemeColor(null)}
+                          className="p-2 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-600 transition-colors"
+                          title="Reset Color"
+                        >
+                          <RotateCcw className="w-4 h-4" />
+                        </button>
+                      )}
                     </div>
                   </div>
 
