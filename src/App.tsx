@@ -19,6 +19,9 @@ import { VideoEditorApp } from "./components/VideoEditorApp";
 import { AudioEditorApp } from "./components/AudioEditorApp";
 import { TextNoteApp } from "./components/TextNoteApp";
 import { SecretNotesInterface } from "./components/SecretNotesInterface";
+import { TetrisGame } from "./components/TetrisGame";
+import { SpaceInvadersGame } from "./components/SpaceInvadersGame";
+import { EvolutionGame } from "./components/EvolutionGame";
 import { AnimatePresence, motion } from "motion/react";
 import { X } from "lucide-react";
 
@@ -37,7 +40,10 @@ type AppState =
   | "VIDEOEDITOR_OPEN"
   | "AUDIOEDITOR_OPEN"
   | "TEXTNOTE_OPEN"
-  | "SECRET_NOTES";
+  | "SECRET_NOTES"
+  | "TETRIS_OPEN"
+  | "SPACE_INVADERS_OPEN"
+  | "EVOLUTION_OPEN";
 export type AppId =
   | "clock"
   | "calculator"
@@ -52,8 +58,6 @@ export type AppId =
   | "videoeditor"
   | "audioeditor"
   | "notes";
-
-type AppVersion = { x: number; y: number; z: number };
 
 const convertArabicNumbers = (str: string) => {
   const arabicNumbers = [
@@ -104,25 +108,6 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem("notes", JSON.stringify(notes));
   }, [notes]);
-
-  const [version, setVersion] = useState<AppVersion>({ x: 1, y: 0, z: 0 });
-
-  const incrementVersion = () => {
-    setVersion((v) => {
-      let newZ = v.z + 1;
-      let newY = v.y;
-      let newX = v.x;
-      if (newZ >= 10) {
-        newZ = 0;
-        newY += 1;
-        if (newY >= 10) {
-          newY = 0;
-          newX += 1;
-        }
-      }
-      return { x: newX, y: newY, z: newZ };
-    });
-  };
 
   const handleOpenLauncher = () => setIsLauncherOpen(true);
   const handleCloseLauncher = () => setIsLauncherOpen(false);
@@ -177,7 +162,6 @@ export default function App() {
   };
 
   const handleSaveAppNote = (title: string, data: unknown, appId: AppId) => {
-    incrementVersion();
     let noteData;
     if (appId === "notes") {
       const notePayload = data as Record<string, string> | null;
@@ -260,14 +244,18 @@ export default function App() {
 
   const handleSecretCode = (rawCode: string) => {
     const code = convertArabicNumbers(rawCode);
-    if (code === "010" || code === "0000") {
+    if (code === "00" || code === "0000") {
       setShowSecretCodesInfo(true);
     } else if (code === "1122") {
       setAppState("SECRET_NOTES");
+    } else if (code === "1111") {
+      setAppState("TETRIS_OPEN");
+    } else if (code === "2222") {
+      setAppState("SPACE_INVADERS_OPEN");
+    } else if (code === "3333") {
+      setAppState("EVOLUTION_OPEN");
     }
   };
-
-  const formattedVersion = `v${version.x}.${version.y}.${version.z}`;
 
   return (
     <ThemeProvider lang={lang} theme={theme}>
@@ -381,6 +369,15 @@ export default function App() {
                 {appState === "TEXTNOTE_OPEN" && (
                   <TextNoteApp lang={lang} onBack={handleBackToNotes} initialData={activeNoteData} onSaveNote={(title, data) => handleSaveAppNote(title, data, "notes")} />
                 )}
+                {appState === "TETRIS_OPEN" && (
+                  <TetrisGame lang={lang} theme={theme} onBack={handleBackToNotes} />
+                )}
+                {appState === "SPACE_INVADERS_OPEN" && (
+                  <SpaceInvadersGame lang={lang} theme={theme} onBack={handleBackToNotes} />
+                )}
+                {appState === "EVOLUTION_OPEN" && (
+                  <EvolutionGame lang={lang} theme={theme} onBack={handleBackToNotes} />
+                )}
               </motion.div>
             </div>
           )}
@@ -406,7 +403,6 @@ export default function App() {
         onChangeLanguage={setLang}
         onChangeTheme={setTheme}
         onSecretCode={handleSecretCode}
-        version={formattedVersion}
       />
 
       <CalendarModal
@@ -452,9 +448,21 @@ export default function App() {
                 </li>
                 <li key="secret-codes" className="flex flex-col bg-neutral-100 dark:bg-neutral-900 p-3 rounded-xl border border-neutral-200 dark:border-neutral-700">
                   <span className="font-mono font-bold text-blue-500 mb-1">
-                    010
+                    00
                   </span>
                   <span>استعراض الأكواد السرية / Secret Codes List</span>
+                </li>
+                <li key="tetris" className="flex flex-col bg-neutral-100 dark:bg-neutral-900 p-3 rounded-xl border border-neutral-200 dark:border-neutral-700">
+                  <span className="font-mono font-bold text-blue-500 mb-1">1111</span>
+                  <span>لعبة تيتريس / Tetris Game</span>
+                </li>
+                <li key="space-invaders" className="flex flex-col bg-neutral-100 dark:bg-neutral-900 p-3 rounded-xl border border-neutral-200 dark:border-neutral-700">
+                  <span className="font-mono font-bold text-blue-500 mb-1">2222</span>
+                  <span>لعبة الفضاء / Space Invaders</span>
+                </li>
+                <li key="evolution" className="flex flex-col bg-neutral-100 dark:bg-neutral-900 p-3 rounded-xl border border-neutral-200 dark:border-neutral-700">
+                  <span className="font-mono font-bold text-blue-500 mb-1">3333</span>
+                  <span>لعبة التطور / Evolution Game</span>
                 </li>
               </ul>
             </motion.div>

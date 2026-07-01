@@ -26,7 +26,6 @@ interface Props {
   onChangeLanguage: (lang: Language) => void;
   onChangeTheme: (theme: ThemeMode) => void;
   onSecretCode: (code: string) => void;
-  version?: string;
 }
 
 export function SettingsModal({
@@ -41,7 +40,6 @@ export function SettingsModal({
   onChangeLanguage,
   onChangeTheme,
   onSecretCode,
-  version,
 }: Props) {
   const t = translations[lang];
   const [secretCode, setSecretCode] = useState("");
@@ -239,19 +237,10 @@ export function SettingsModal({
                   </div>
 
                   <div>
-                    <div className="flex justify-between items-end mb-3">
+                    <div className="mb-3">
                       <p className="text-neutral-500 dark:text-neutral-400 text-sm">
                         {t.secretCode}
                       </p>
-                      <button
-                        onClick={() => {
-                          onSecretCode("010");
-                          onClose();
-                        }}
-                        className="text-xs text-blue-500 hover:text-blue-600 underline"
-                      >
-                        {lang === "ar" ? "عرض الأكواد السرية" : "Show Secret Codes"}
-                      </button>
                     </div>
                     <form onSubmit={handleSecretSubmit} className="flex gap-2">
                       <input
@@ -270,12 +259,6 @@ export function SettingsModal({
                       </button>
                     </form>
                   </div>
-
-                  {version && (
-                    <div className="text-center mt-6">
-                      <p className="text-xs text-neutral-400 font-mono">{version}</p>
-                    </div>
-                  )}
                 </>
               )}
             </div>

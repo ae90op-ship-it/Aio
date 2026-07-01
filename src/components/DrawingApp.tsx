@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect, useCallback } from "react";
 import { Language } from "../types";
 import { translations } from "../i18n";
 import {
@@ -29,155 +29,78 @@ const COLORS = [
   "#ec4899",
 ];
 
+type Point = { x: number; y: number };
+type DrawingElement =
+  | { type: "path"; points: Point[]; color: string; width: number; isEraser: boolean }
+  | { type: "shape"; shapeType: string; start: Point; end: Point; color: string; width: number; sides: number };
+
 export function DrawingApp({ lang, onBack, initialData, onSaveNote }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [isDrawing, setIsDrawing] = useState(false);
+  const [elements, setElements] = useState<DrawingElement[]>([]);
+  const [currentElement, setCurrentElement] = useState<DrawingElement | null>(null);
+  
   const [color, setColor] = useState("#000000");
   const [lineWidth, setLineWidth] = useState(5);
   const [tool, setTool] = useState<"draw" | "pan" | "eraser" | "shape">("draw");
   const [shapeType, setShapeType] = useState<"rect" | "circle" | "line" | "triangle" | "star" | "polygon">("rect");
   const [polygonSides, setPolygonSides] = useState(5);
+  
+  // Viewport state
+  const [pan, setPan] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
-  const [drawStart, setDrawStart] = useState({ x: 0, y: 0 });
-  const [canvasSnapshot, setCanvasSnapshot] = useState<ImageData | null>(null);
+  
+  // Interaction state
+  const [isInteracting, setIsInteracting] = useState(false);
+  const [lastPanPoint, setLastPanPoint] = useState<Point | null>(null);
 
-  // Pan state
-  const [isPanning, setIsPanning] = useState(false);
-  const [panStart, setPanStart] = useState({ x: 0, y: 0 });
-  const [scrollStart, setScrollStart] = useState({ left: 0, top: 0 });
-
+  // Resize observer to keep canvas matching container size
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (canvas) {
-      const ctx = canvas.getContext("2d");
-      if (ctx) {
-        ctx.lineCap = "round";
-        ctx.lineJoin = "round";
+    const container = containerRef.current;
+    if (!container) return;
+    const observer = new ResizeObserver(() => {
+      renderCanvas();
+    });
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [elements, currentElement, pan, zoom]);
 
-        if (initialData) {
-          const img = new Image();
-          img.onload = () => {
-            ctx.drawImage(img, 0, 0);
-          };
-          img.src = initialData;
-        } else {
-          ctx.fillStyle = "#ffffff";
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
-        }
-      }
-
-      // Center the view initially
-      if (containerRef.current) {
-        containerRef.current.scrollTop =
-          5000 - containerRef.current.clientHeight / 2;
-        containerRef.current.scrollLeft =
-          5000 - containerRef.current.clientWidth / 2;
-      }
-    }
-  }, [initialData]);
-
-  const startAction = (e: React.MouseEvent | React.TouchEvent) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-
-    const clientX = "touches" in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
-    const clientY = "touches" in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
-    
-    if (tool === "pan") {
-      setIsPanning(true);
-      setPanStart({ x: clientX, y: clientY });
-      if (containerRef.current) {
-        setScrollStart({
-          left: containerRef.current.scrollLeft,
-          top: containerRef.current.scrollTop,
-        });
-      }
-    } else {
-      setIsDrawing(true);
-      const x = (clientX - rect.left) * scaleX;
-      const y = (clientY - rect.top) * scaleY;
-      
-      const ctx = canvas.getContext("2d");
-      if (ctx && tool === "shape") {
-        setDrawStart({ x, y });
-        setCanvasSnapshot(ctx.getImageData(0, 0, canvas.width, canvas.height));
-      } else {
-        draw(e);
-      }
-    }
-  };
-
-  const stopAction = () => {
-    setIsDrawing(false);
-    setIsPanning(false);
-    const canvas = canvasRef.current;
-    if (canvas && (tool === "draw" || tool === "eraser" || tool === "shape")) {
-      const ctx = canvas.getContext("2d");
-      if (ctx) ctx.beginPath();
-    }
-    setCanvasSnapshot(null);
-  };
-
-  const handleAction = (e: React.MouseEvent | React.TouchEvent) => {
-    if (tool === "pan" && isPanning && containerRef.current) {
-      const clientX =
-        "touches" in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
-      const clientY =
-        "touches" in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
-
-      const dx = clientX - panStart.x;
-      const dy = clientY - panStart.y;
-
-      containerRef.current.scrollLeft = scrollStart.left - dx;
-      containerRef.current.scrollTop = scrollStart.top - dy;
-      return;
-    }
-
-    if (tool === "draw" || tool === "eraser" || tool === "shape") {
-      draw(e);
-    }
-  };
-
-  const drawShapePath = (ctx: CanvasRenderingContext2D, x: number, y: number, startX: number, startY: number) => {
-    const width = x - startX;
-    const height = y - startY;
+  const drawShapePath = (ctx: CanvasRenderingContext2D, type: string, start: Point, end: Point, sides: number) => {
+    const width = end.x - start.x;
+    const height = end.y - start.y;
     const radius = Math.sqrt(width * width + height * height);
 
     ctx.beginPath();
-    if (shapeType === "rect") {
-      ctx.rect(startX, startY, width, height);
-    } else if (shapeType === "circle") {
-      ctx.arc(startX, startY, radius, 0, Math.PI * 2);
-    } else if (shapeType === "line") {
-      ctx.moveTo(startX, startY);
-      ctx.lineTo(x, y);
-    } else if (shapeType === "triangle") {
-      ctx.moveTo(startX + width / 2, startY);
-      ctx.lineTo(startX, y);
-      ctx.lineTo(x, y);
+    if (type === "rect") {
+      ctx.rect(start.x, start.y, width, height);
+    } else if (type === "circle") {
+      ctx.arc(start.x, start.y, radius, 0, Math.PI * 2);
+    } else if (type === "line") {
+      ctx.moveTo(start.x, start.y);
+      ctx.lineTo(end.x, end.y);
+    } else if (type === "triangle") {
+      ctx.moveTo(start.x + width / 2, start.y);
+      ctx.lineTo(start.x, end.y);
+      ctx.lineTo(end.x, end.y);
       ctx.closePath();
-    } else if (shapeType === "polygon") {
-      const sides = Math.max(3, polygonSides);
-      for (let i = 0; i < sides; i++) {
-        const angle = (i * 2 * Math.PI) / sides - Math.PI / 2;
-        const px = startX + radius * Math.cos(angle);
-        const py = startY + radius * Math.sin(angle);
+    } else if (type === "polygon") {
+      const s = Math.max(3, sides);
+      for (let i = 0; i < s; i++) {
+        const angle = (i * 2 * Math.PI) / s - Math.PI / 2;
+        const px = start.x + radius * Math.cos(angle);
+        const py = start.y + radius * Math.sin(angle);
         if (i === 0) ctx.moveTo(px, py);
         else ctx.lineTo(px, py);
       }
       ctx.closePath();
-    } else if (shapeType === "star") {
-      const points = Math.max(3, polygonSides);
+    } else if (type === "star") {
+      const points = Math.max(3, sides);
       const innerRadius = radius / 2;
       for (let i = 0; i < points * 2; i++) {
         const r = i % 2 === 0 ? radius : innerRadius;
         const angle = (i * Math.PI) / points - Math.PI / 2;
-        const px = startX + r * Math.cos(angle);
-        const py = startY + r * Math.sin(angle);
+        const px = start.x + r * Math.cos(angle);
+        const py = start.y + r * Math.sin(angle);
         if (i === 0) ctx.moveTo(px, py);
         else ctx.lineTo(px, py);
       }
@@ -185,76 +108,225 @@ export function DrawingApp({ lang, onBack, initialData, onSaveNote }: Props) {
     }
   };
 
-  const draw = (e: React.MouseEvent | React.TouchEvent) => {
-    if (!isDrawing) return;
+  const renderCanvas = useCallback(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    const container = containerRef.current;
+    if (!canvas || !container) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
+    // Match physical size
+    if (canvas.width !== container.clientWidth) canvas.width = container.clientWidth;
+    if (canvas.height !== container.clientHeight) canvas.height = container.clientHeight;
 
-    const clientX = "touches" in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
-    const clientY = "touches" in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    const x = (clientX - rect.left) * scaleX;
-    const y = (clientY - rect.top) * scaleY;
+    ctx.save();
+    ctx.translate(pan.x, pan.y);
+    ctx.scale(zoom, zoom);
 
-    if (tool === "eraser") {
-      ctx.globalCompositeOperation = "destination-out";
-      ctx.lineWidth = lineWidth;
-      ctx.lineTo(x, y);
-      ctx.stroke();
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+
+    const allElements = currentElement ? [...elements, currentElement] : elements;
+
+    for (const el of allElements) {
       ctx.beginPath();
-      ctx.moveTo(x, y);
-    } else if (tool === "shape") {
-      if (canvasSnapshot) {
+      ctx.lineWidth = el.width;
+      if (el.type === "path") {
+        ctx.globalCompositeOperation = el.isEraser ? "destination-out" : "source-over";
+        ctx.strokeStyle = el.isEraser ? "rgba(0,0,0,1)" : el.color;
+        if (el.points.length > 0) {
+          ctx.moveTo(el.points[0].x, el.points[0].y);
+          for (let i = 1; i < el.points.length; i++) {
+            ctx.lineTo(el.points[i].x, el.points[i].y);
+          }
+          ctx.stroke();
+        }
+      } else if (el.type === "shape") {
         ctx.globalCompositeOperation = "source-over";
-        ctx.putImageData(canvasSnapshot, 0, 0);
-        ctx.lineWidth = lineWidth;
-        ctx.strokeStyle = color;
-        drawShapePath(ctx, x, y, drawStart.x, drawStart.y);
+        ctx.strokeStyle = el.color;
+        drawShapePath(ctx, el.shapeType, el.start, el.end, el.sides);
         ctx.stroke();
       }
-    } else {
-      ctx.globalCompositeOperation = "source-over";
-      ctx.lineWidth = lineWidth;
-      ctx.strokeStyle = color;
+    }
 
-      ctx.lineTo(x, y);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(x, y);
+    ctx.restore();
+  }, [elements, currentElement, pan, zoom]);
+
+  useEffect(() => {
+    renderCanvas();
+  }, [renderCanvas]);
+
+  const getPointerPos = (e: React.MouseEvent | React.TouchEvent | globalThis.TouchEvent): Point | null => {
+    const canvas = canvasRef.current;
+    if (!canvas) return null;
+    const rect = canvas.getBoundingClientRect();
+    const clientX = "touches" in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
+    const clientY = "touches" in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
+    return {
+      x: (clientX - rect.left - pan.x) / zoom,
+      y: (clientY - rect.top - pan.y) / zoom,
+    };
+  };
+
+  const getRawPointerPos = (e: React.MouseEvent | React.TouchEvent): Point => {
+    const clientX = "touches" in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
+    const clientY = "touches" in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
+    return { x: clientX, y: clientY };
+  };
+
+  const handlePointerDown = (e: React.MouseEvent | React.TouchEvent) => {
+    setIsInteracting(true);
+    if (tool === "pan") {
+      setLastPanPoint(getRawPointerPos(e));
+    } else {
+      const pos = getPointerPos(e);
+      if (!pos) return;
+      if (tool === "draw" || tool === "eraser") {
+        setCurrentElement({
+          type: "path",
+          points: [pos],
+          color,
+          width: lineWidth,
+          isEraser: tool === "eraser"
+        });
+      } else if (tool === "shape") {
+        setCurrentElement({
+          type: "shape",
+          shapeType,
+          start: pos,
+          end: pos,
+          color,
+          width: lineWidth,
+          sides: polygonSides
+        });
+      }
     }
   };
 
-  const clearCanvas = () => {
-    const canvas = canvasRef.current;
-    if (canvas) {
-      const ctx = canvas.getContext("2d");
-      if (ctx) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const handlePointerMove = (e: React.MouseEvent | React.TouchEvent) => {
+    if (!isInteracting) return;
+    
+    if (tool === "pan" && lastPanPoint) {
+      const rawPos = getRawPointerPos(e);
+      const dx = rawPos.x - lastPanPoint.x;
+      const dy = rawPos.y - lastPanPoint.y;
+      setPan(prev => ({ x: prev.x + dx, y: prev.y + dy }));
+      setLastPanPoint(rawPos);
+    } else if (currentElement) {
+      const pos = getPointerPos(e);
+      if (!pos) return;
+      
+      if (currentElement.type === "path") {
+        setCurrentElement({
+          ...currentElement,
+          points: [...currentElement.points, pos]
+        });
+      } else if (currentElement.type === "shape") {
+        setCurrentElement({
+          ...currentElement,
+          end: pos
+        });
       }
     }
+  };
+
+  const handlePointerUp = () => {
+    setIsInteracting(false);
+    setLastPanPoint(null);
+    if (currentElement) {
+      setElements(prev => [...prev, currentElement]);
+      setCurrentElement(null);
+    }
+  };
+
+  const handleWheel = (e: React.WheelEvent) => {
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault();
+      const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+      setZoom(z => Math.min(Math.max(0.1, z * zoomFactor), 10));
+    } else {
+      setPan(prev => ({ x: prev.x - e.deltaX, y: prev.y - e.deltaY }));
+    }
+  };
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    // Prevent default wheel behavior for zooming
+    const handleNativeWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+      if (e.ctrlKey || e.metaKey) {
+        setZoom(z => Math.min(Math.max(0.1, z * zoomFactor), 10));
+      } else {
+        setPan(prev => ({ x: prev.x - e.deltaX, y: prev.y - e.deltaY }));
+      }
+    };
+    canvas.addEventListener("wheel", handleNativeWheel, { passive: false });
+    return () => canvas.removeEventListener("wheel", handleNativeWheel);
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === "Space" && tool !== "pan") {
+        setTool("pan");
+      }
+    };
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.code === "Space" && tool === "pan") {
+        setTool("draw");
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+    };
+  }, [tool]);
+
+  const clearCanvas = () => {
+    setElements([]);
+    setCurrentElement(null);
   };
 
   const downloadCanvas = () => {
     const canvas = canvasRef.current;
     if (canvas) {
-      const dataUrl = canvas.toDataURL("image/png");
-      const link = document.createElement("a");
-      link.download = "drawing.png";
-      link.href = dataUrl;
-      link.click();
+      // Create a temporary canvas with white background
+      const tempCanvas = document.createElement("canvas");
+      tempCanvas.width = canvas.width;
+      tempCanvas.height = canvas.height;
+      const ctx = tempCanvas.getContext("2d");
+      if (ctx) {
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+        ctx.drawImage(canvas, 0, 0);
+        
+        const dataUrl = tempCanvas.toDataURL("image/png");
+        const link = document.createElement("a");
+        link.download = "drawing.png";
+        link.href = dataUrl;
+        link.click();
+      }
     }
   };
 
   const saveToNote = () => {
     if (onSaveNote && canvasRef.current) {
-      const dataUrl = canvasRef.current.toDataURL("image/png");
-      onSaveNote(lang === "ar" ? "رسمة" : "Drawing", dataUrl);
+      const tempCanvas = document.createElement("canvas");
+      tempCanvas.width = canvasRef.current.width;
+      tempCanvas.height = canvasRef.current.height;
+      const ctx = tempCanvas.getContext("2d");
+      if (ctx) {
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+        ctx.drawImage(canvasRef.current, 0, 0);
+        const dataUrl = tempCanvas.toDataURL("image/png");
+        onSaveNote(lang === "ar" ? "رسمة" : "Drawing", dataUrl);
+      }
     }
   };
 
@@ -307,8 +379,8 @@ export function DrawingApp({ lang, onBack, initialData, onSaveNote }: Props) {
           
           <div className="flex bg-neutral-100 dark:bg-neutral-800 rounded-lg overflow-hidden border border-neutral-200 dark:border-neutral-700 items-center px-1 shadow-sm">
             <button onClick={() => setZoom(z => Math.max(0.1, z - 0.1))} className="p-2 text-neutral-500 hover:text-neutral-900 dark:hover:text-white font-bold text-lg leading-none">-</button>
-            <span className="text-xs font-mono w-10 text-center text-neutral-700 dark:text-neutral-300">{Math.round(zoom * 100)}%</span>
-            <button onClick={() => setZoom(z => Math.min(5, z + 0.1))} className="p-2 text-neutral-500 hover:text-neutral-900 dark:hover:text-white font-bold text-lg leading-none">+</button>
+            <span className="text-xs font-mono w-12 text-center text-neutral-700 dark:text-neutral-300">{Math.round(zoom * 100)}%</span>
+            <button onClick={() => setZoom(z => Math.min(10, z + 0.1))} className="p-2 text-neutral-500 hover:text-neutral-900 dark:hover:text-white font-bold text-lg leading-none">+</button>
           </div>
         </div>
 
@@ -344,7 +416,7 @@ export function DrawingApp({ lang, onBack, initialData, onSaveNote }: Props) {
           <select 
             value={shapeType} 
             onChange={e => setShapeType(e.target.value as any)}
-            className="px-2 py-1 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded text-sm text-neutral-800 dark:text-neutral-200"
+            className="px-2 py-1 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded text-sm text-neutral-800 dark:text-neutral-200 focus:outline-none focus:border-blue-500"
           >
             <option value="rect">{lang === "ar" ? "مستطيل" : "Rectangle"}</option>
             <option value="circle">{lang === "ar" ? "دائرة" : "Circle"}</option>
@@ -362,7 +434,7 @@ export function DrawingApp({ lang, onBack, initialData, onSaveNote }: Props) {
                 min="3" max="20" 
                 value={polygonSides} 
                 onChange={e => setPolygonSides(Number(e.target.value))}
-                className="w-16 px-2 py-1 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded text-sm text-neutral-800 dark:text-neutral-200"
+                className="w-16 px-2 py-1 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded text-sm text-neutral-800 dark:text-neutral-200 focus:outline-none focus:border-blue-500"
               />
             </div>
           )}
@@ -371,27 +443,22 @@ export function DrawingApp({ lang, onBack, initialData, onSaveNote }: Props) {
 
       <div
         ref={containerRef}
-        className="flex-1 overflow-auto bg-neutral-200 dark:bg-neutral-950 relative"
+        className="flex-1 overflow-hidden bg-neutral-200 dark:bg-neutral-950 relative"
       >
-        <div className="min-w-max min-h-max p-10" style={{ transform: `scale(${zoom})`, transformOrigin: "0 0" }}>
-          <canvas
-            ref={canvasRef}
-            width={10000}
-            height={10000}
-            className={`bg-white shadow-xl ${tool === "pan" ? "cursor-grab active:cursor-grabbing" : "cursor-crosshair"} touch-none`}
-            style={{ width: "10000px", height: "10000px" }}
-            onMouseDown={startAction}
-            onMouseUp={stopAction}
-            onMouseOut={stopAction}
-            onMouseMove={handleAction}
-            onTouchStart={startAction}
-            onTouchEnd={stopAction}
-            onTouchMove={handleAction}
-          />
-        </div>
+        <canvas
+          ref={canvasRef}
+          className={`absolute inset-0 block bg-white dark:bg-neutral-900 touch-none ${tool === "pan" ? (isInteracting ? "cursor-grabbing" : "cursor-grab") : "cursor-crosshair"}`}
+          onMouseDown={handlePointerDown}
+          onMouseMove={handlePointerMove}
+          onMouseUp={handlePointerUp}
+          onMouseOut={handlePointerUp}
+          onTouchStart={handlePointerDown}
+          onTouchMove={handlePointerMove}
+          onTouchEnd={handlePointerUp}
+        />
       </div>
 
-      <div className="p-4 border-t border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 flex flex-col gap-4">
+      <div className="p-4 border-t border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 flex flex-col gap-4 z-10">
         <div className="flex justify-center gap-4 flex-wrap items-center">
           <div className="flex items-center gap-2">
             <label className="text-sm text-neutral-600 dark:text-neutral-400">{lang === "ar" ? "اللون:" : "Color:"}</label>
@@ -434,3 +501,4 @@ export function DrawingApp({ lang, onBack, initialData, onSaveNote }: Props) {
     </div>
   );
 }
+

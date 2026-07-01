@@ -1,0 +1,154 @@
+src/components/VideoPlayerApp.tsx:    <div className="flex flex-col h-full bg-neutral-100 dark:bg-neutral-900 w-full relative">
+src/components/VideoPlayerApp.tsx:        <button onClick={onExit} className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-full text-neutral-600 dark:text-neutral-400">
+src/components/VideoPlayerApp.tsx:        <h2 className="text-lg font-bold flex items-center gap-2 text-neutral-900 dark:text-white">
+src/components/VideoPlayerApp.tsx:      <div className="flex-1 bg-black flex items-center justify-center p-4">
+src/components/VideoEditorApp.tsx:    <div className="flex flex-col h-full bg-neutral-100 dark:bg-neutral-900 w-full relative">
+src/components/VideoEditorApp.tsx:        <button onClick={onExit} className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-full text-neutral-600 dark:text-neutral-400">
+src/components/VideoEditorApp.tsx:        <h2 className="text-lg font-bold flex items-center gap-2 text-neutral-900 dark:text-white">
+src/components/VideoEditorApp.tsx:            <h3 className="font-semibold flex items-center gap-2 text-neutral-900 dark:text-white">
+src/components/VideoEditorApp.tsx:        <div className="flex-1 bg-black flex items-center justify-center p-4">
+src/components/EvolutionGame.tsx:    <div className="flex flex-col h-full bg-neutral-50 dark:bg-neutral-900 w-full relative font-sans">
+src/components/EvolutionGame.tsx:          className="p-2 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded-full text-neutral-600 dark:text-neutral-400 transition-colors"
+src/components/EvolutionGame.tsx:        <h2 className="text-lg font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+src/components/EvolutionGame.tsx:        <div className="md:w-1/3 p-6 flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-sm z-10">
+src/components/EvolutionGame.tsx:            className="w-48 h-48 rounded-full bg-gradient-to-br from-blue-400 to-indigo-600 hover:from-blue-500 hover:to-indigo-700 active:scale-95 transition-all shadow-xl shadow-blue-500/30 flex items-center justify-center text-6xl text-white select-none relative overflow-hidden group"
+src/components/EvolutionGame.tsx:                      ? 'bg-white dark:bg-neutral-800 border-blue-200 dark:border-blue-900/50 hover:border-blue-400 dark:hover:border-blue-700 shadow-sm cursor-pointer active:scale-[0.98]' 
+src/components/EvolutionGame.tsx:                      : 'bg-neutral-50 dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 opacity-70 cursor-not-allowed'
+src/components/EvolutionGame.tsx:                    <h4 className="font-bold text-neutral-900 dark:text-white text-lg leading-tight">{upg.name}</h4>
+src/components/TetrisGame.tsx:    <div className="flex flex-col h-full bg-neutral-100 dark:bg-neutral-900 w-full relative">
+src/components/TetrisGame.tsx:          className="p-2 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded-full text-neutral-600 dark:text-neutral-400 transition-colors"
+src/components/TetrisGame.tsx:        <h2 className="text-lg font-bold text-neutral-900 dark:text-white">Tetris</h2>
+src/components/TetrisGame.tsx:        <div className="mb-4 text-xl font-bold text-neutral-900 dark:text-white">Score: {score}</div>
+src/components/TetrisGame.tsx:        <div className="bg-neutral-200 dark:bg-neutral-800 p-2 rounded-xl shadow-2xl relative">
+src/components/TetrisGame.tsx:          <div className="grid grid-rows-20 gap-px bg-neutral-300 dark:bg-neutral-900 border border-neutral-400 dark:border-neutral-700" style={{ gridTemplateRows: 'repeat(20, minmax(0, 1fr))' }}>
+src/components/TetrisGame.tsx:                    className={`w-6 h-6 sm:w-8 sm:h-8 ${cell ? cell : 'bg-white dark:bg-neutral-800'}`} 
+src/components/TetrisGame.tsx:            <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center rounded-xl backdrop-blur-sm">
+src/components/TetrisGame.tsx:              {gameOver && <div className="text-white text-2xl font-bold mb-4 text-center">Game Over<br/><span className="text-lg">Score: {score}</span></div>}
+src/components/TetrisGame.tsx:                className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-full font-bold shadow-lg transition-transform hover:scale-105 active:scale-95"
+src/components/CalculatorApp.tsx:    <div className="flex flex-col h-full bg-neutral-100 dark:bg-neutral-900 w-full relative">
+src/components/CalculatorApp.tsx:          className="p-2 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded-full text-neutral-600 dark:text-neutral-400 transition-colors"
+src/components/CalculatorApp.tsx:        <div className="w-full bg-neutral-200 dark:bg-neutral-800 p-4 sm:p-6 rounded-[2rem] shadow-2xl border-4 border-neutral-300 dark:border-neutral-700 flex flex-col gap-6">
+src/components/CalculatorApp.tsx:                <button onClick={() => setIsShift(!isShift)} className={`w-full py-2 rounded-full text-xs font-bold transition-all ${isShift ? 'bg-yellow-400 text-neutral-900' : 'bg-neutral-700 dark:bg-neutral-600 text-white shadow-md active:scale-95'}`}>SHIFT</button>
+src/components/CalculatorApp.tsx:                <button onClick={() => setIsAlpha(!isAlpha)} className={`w-full py-2 rounded-full text-xs font-bold transition-all ${isAlpha ? 'bg-red-400 text-neutral-900' : 'bg-neutral-700 dark:bg-neutral-600 text-white shadow-md active:scale-95'}`}>ALPHA</button>
+src/components/CalculatorApp.tsx:                  <div className="absolute top-1 text-[8px] text-white">▲</div>
+src/components/CalculatorApp.tsx:                  <div className="absolute bottom-1 text-[8px] text-white">▼</div>
+src/components/CalculatorApp.tsx:                  <div className="absolute left-1 text-[8px] text-white">◀</div>
+src/components/CalculatorApp.tsx:                  <div className="absolute right-1 text-[8px] text-white">▶</div>
+src/components/CalculatorApp.tsx:                  <div className="w-8 h-8 rounded-full bg-neutral-800 dark:bg-neutral-700 shadow-inner"></div>
+src/components/CalculatorApp.tsx:                <button className="w-full py-2 rounded-full text-xs font-bold bg-neutral-700 dark:bg-neutral-600 text-white shadow-md active:scale-95">MODE</button>
+src/components/CalculatorApp.tsx:                <button key={btn} onClick={() => handleInput(btn)} className="bg-neutral-800 dark:bg-neutral-700 text-white py-2 rounded shadow-md active:scale-95 font-medium">{btn}</button>
+src/components/CalculatorApp.tsx:                <button key={btn} onClick={() => handleInput(btn)} className="bg-neutral-800 dark:bg-neutral-700 text-white py-2 rounded shadow-md active:scale-95 font-medium">{btn}</button>
+src/components/CalculatorApp.tsx:                <button key={btn} onClick={() => handleInput(btn)} className="bg-neutral-800 dark:bg-neutral-700 text-white py-2 rounded shadow-md active:scale-95 font-medium">{btn}</button>
+src/components/CalculatorApp.tsx:                <button onClick={handleDelete} className="bg-red-500 hover:bg-red-600 text-white py-3 rounded shadow-md active:scale-95 font-bold">DEL</button>
+src/components/CalculatorApp.tsx:                <button onClick={handleClear} className="bg-red-500 hover:bg-red-600 text-white py-3 rounded shadow-md active:scale-95 font-bold">AC</button>
+src/components/CalculatorApp.tsx:                <button onClick={() => handleInput('×')} className="bg-neutral-400 dark:bg-neutral-500 text-neutral-900 dark:text-white py-3 rounded shadow-md active:scale-95 text-lg font-bold">×</button>
+src/components/CalculatorApp.tsx:                <button onClick={() => handleInput('÷')} className="bg-neutral-400 dark:bg-neutral-500 text-neutral-900 dark:text-white py-3 rounded shadow-md active:scale-95 text-lg font-bold">÷</button>
+src/components/CalculatorApp.tsx:                <button onClick={() => handleInput('+')} className="bg-neutral-400 dark:bg-neutral-500 text-neutral-900 dark:text-white py-3 rounded shadow-md active:scale-95 text-lg font-bold">+</button>
+src/components/CalculatorApp.tsx:                <button onClick={() => handleInput('-')} className="bg-neutral-400 dark:bg-neutral-500 text-neutral-900 dark:text-white py-3 rounded shadow-md active:scale-95 text-lg font-bold">-</button>
+src/components/CalculatorApp.tsx:                <button onClick={handleCalculate} className="bg-blue-600 hover:bg-blue-700 text-white py-3 rounded shadow-md active:scale-95 text-xl font-bold">=</button>
+src/components/NotesInterface.tsx:      <header className="px-8 py-6 border-b border-neutral-200 dark:border-neutral-800 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-md sticky top-0 z-10 flex flex-col gap-4">
+src/components/NotesInterface.tsx:            <h1 className="text-2xl font-semibold text-neutral-900 dark:text-white">
+src/components/NotesInterface.tsx:              className="p-2 text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 rounded-full transition-all"
+src/components/NotesInterface.tsx:              className="p-2 text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 rounded-full transition-all"
+src/components/NotesInterface.tsx:              className="w-full bg-neutral-100 dark:bg-neutral-800 border border-transparent focus:border-blue-500 rounded-xl pl-9 pr-4 py-2 text-sm text-neutral-900 dark:text-white focus:outline-none transition-colors"
+src/components/NotesInterface.tsx:            className="p-2 flex items-center justify-center bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-xl text-neutral-600 dark:text-neutral-300 transition-colors"
+src/components/NotesInterface.tsx:              className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${selectedTag === null ? "bg-blue-600 text-white" : "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700"}`}
+src/components/NotesInterface.tsx:                className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${selectedTag === tag ? "bg-blue-600 text-white" : "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700"}`}
+src/components/NotesInterface.tsx:                className={`group bg-white dark:bg-neutral-800/50 rounded-2xl p-6 border transition-all relative shadow-sm hover:shadow-md ${note.isPinned ? "border-yellow-400/50 shadow-[0_0_15px_rgba(250,204,21,0.1)]" : "border-neutral-200 dark:border-neutral-700/50 hover:border-blue-500/30 dark:hover:border-blue-500/30"}`}
+src/components/NotesInterface.tsx:                <h2 className="text-lg font-semibold text-neutral-900 dark:text-white mb-2 pr-24 sm:pr-36 flex items-center gap-2">
+src/components/NotesInterface.tsx:                        className="px-2 py-1 bg-white dark:bg-neutral-900 border border-blue-500 rounded text-xs w-20 focus:outline-none"
+src/components/NotesInterface.tsx:                      className="inline-flex items-center gap-1 px-2 py-1 bg-neutral-50 dark:bg-neutral-800 border border-dashed border-neutral-300 dark:border-neutral-600 text-neutral-500 dark:text-neutral-400 rounded text-xs hover:bg-neutral-100 dark:hover:bg-neutral-700"
+src/components/NotesInterface.tsx:                        <div className="bg-white dark:bg-neutral-900 rounded-lg p-2 border border-neutral-200 dark:border-neutral-700">
+src/components/NotesInterface.tsx:                        className="p-4 rounded-xl bg-neutral-100 dark:bg-neutral-800/80 border border-neutral-200 dark:border-neutral-700 flex items-center justify-between cursor-pointer hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors shadow-sm"
+src/components/NotesInterface.tsx:                          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-inner">
+src/components/NotesInterface.tsx:                            <h3 className="font-bold text-neutral-900 dark:text-white">
+src/components/NotesInterface.tsx:                        <button className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm transition-colors shadow-md flex items-center gap-2">
+src/components/NotesInterface.tsx:          className="flex items-center justify-center w-16 h-16 bg-blue-600 text-white rounded-full shadow-[0_0_20px_rgba(37,99,235,0.4)] hover:bg-blue-500 hover:scale-105 transition-all duration-300"
+src/components/SettingsModal.tsx:            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+src/components/SettingsModal.tsx:            className="relative w-full max-w-md bg-neutral-100 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700/50 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
+src/components/SettingsModal.tsx:            <div className="p-6 border-b border-neutral-300 dark:border-neutral-700 flex items-center justify-between bg-neutral-100 dark:bg-neutral-800 z-10 sticky top-0">
+src/components/SettingsModal.tsx:                  <h2 className="text-xl font-semibold text-neutral-900 dark:text-white">
+src/components/SettingsModal.tsx:                  <h2 className="text-xl font-semibold text-neutral-900 dark:text-white">
+src/components/SettingsModal.tsx:                className="p-2 text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white bg-neutral-200 hover:bg-neutral-300 dark:bg-neutral-800 dark:hover:bg-neutral-700 rounded-full transition-colors"
+src/components/SettingsModal.tsx:                          className="bg-white dark:bg-neutral-900 p-4 rounded-xl border border-neutral-200 dark:border-neutral-700"
+src/components/SettingsModal.tsx:                          <h3 className="font-semibold text-neutral-900 dark:text-white mb-1 truncate">
+src/components/SettingsModal.tsx:                        <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+src/components/SettingsModal.tsx:                        className="flex-1 bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 rounded-xl px-4 py-2 text-neutral-900 dark:text-white focus:outline-none focus:border-blue-500"
+src/components/SettingsModal.tsx:                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl"
+src/components/PasswordManagerApp.tsx:      <header className="p-4 flex items-center justify-between bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800 shadow-sm z-10">
+src/components/PasswordManagerApp.tsx:          <button onClick={onBack} className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-full transition-colors">
+src/components/PasswordManagerApp.tsx:              <Key className="w-4 h-4 text-white" />
+src/components/PasswordManagerApp.tsx:          <button onClick={() => setShowAdd(true)} className="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-md transition-colors">
+src/components/PasswordManagerApp.tsx:              className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-full pl-12 pr-4 py-3 shadow-sm focus:outline-none focus:border-blue-500 transition-colors"
+src/components/PasswordManagerApp.tsx:          <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 overflow-hidden shadow-sm">
+src/components/PasswordManagerApp.tsx:                  <div key={p.id} className="p-4 flex items-center justify-between hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors group">
+src/components/PasswordManagerApp.tsx:                      <div className="w-10 h-10 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-lg font-bold text-neutral-500 capitalize flex-shrink-0">
+src/components/PasswordManagerApp.tsx:            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowAdd(false)} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+src/components/PasswordManagerApp.tsx:              className="relative w-full max-w-md bg-white dark:bg-neutral-900 rounded-t-2xl sm:rounded-2xl shadow-2xl p-6"
+src/components/PasswordManagerApp.tsx:                  <input required type="text" value={newSite} onChange={e => setNewSite(e.target.value)} className="w-full bg-neutral-100 dark:bg-neutral-800 border border-transparent focus:border-blue-500 rounded-xl px-4 py-2 focus:outline-none" />
+src/components/PasswordManagerApp.tsx:                  <input required type="text" value={newUsername} onChange={e => setNewUsername(e.target.value)} className="w-full bg-neutral-100 dark:bg-neutral-800 border border-transparent focus:border-blue-500 rounded-xl px-4 py-2 focus:outline-none" dir="ltr" />
+src/components/PasswordManagerApp.tsx:                  <input required type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} className="w-full bg-neutral-100 dark:bg-neutral-800 border border-transparent focus:border-blue-500 rounded-xl px-4 py-2 focus:outline-none" dir="ltr" />
+src/components/PasswordManagerApp.tsx:                  <button type="button" onClick={() => setShowAdd(false)} className="flex-1 py-2 bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 rounded-xl">
+src/components/PasswordManagerApp.tsx:                  <button type="submit" className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-md">
+src/components/SpreadsheetsApp.tsx:    <div className="flex flex-col h-full bg-white dark:bg-neutral-900 w-full relative">
+src/components/SpreadsheetsApp.tsx:      <header className="p-2 sm:p-4 flex items-center justify-between border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 z-10 shrink-0">
+src/components/SpreadsheetsApp.tsx:            className="p-2 bg-neutral-100 dark:bg-neutral-800 rounded-full text-neutral-600 dark:text-neutral-300"
+src/components/SpreadsheetsApp.tsx:            <h2 className="text-lg font-bold text-neutral-900 dark:text-white hidden sm:block">
+src/components/SpreadsheetsApp.tsx:            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+src/components/SpreadsheetsApp.tsx:          <table className="w-max border-collapse bg-white dark:bg-neutral-900">
+src/components/SpreadsheetsApp.tsx:                <th className="w-10 h-8 border border-neutral-300 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 sticky top-0 left-0 z-20"></th>
+src/components/SpreadsheetsApp.tsx:                    className="min-w-[100px] border border-neutral-300 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 font-normal text-sm sticky top-0 z-10 select-none"
+src/components/SpreadsheetsApp.tsx:                  <td className="w-10 h-8 border border-neutral-300 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 text-center font-normal text-sm sticky left-0 z-10 select-none">
+src/components/SpreadsheetsApp.tsx:                          className="w-full h-full px-1 text-sm bg-transparent outline-none text-neutral-900 dark:text-neutral-100 focus:bg-white dark:focus:bg-neutral-800"
+src/components/ClockApp.tsx:    <div className="flex flex-col h-full bg-slate-50 dark:bg-neutral-900 w-full relative transition-colors duration-300">
+src/components/ClockApp.tsx:          className="p-2 hover:bg-slate-100 dark:hover:bg-neutral-800 rounded-full text-slate-600 dark:text-neutral-400 transition-colors"
+src/components/ClockApp.tsx:          <h1 className="text-xl font-bold text-slate-800 dark:text-white tracking-tight">
+src/components/ClockApp.tsx:        <div className="w-full max-w-md bg-white/70 dark:bg-neutral-900/70 backdrop-blur-xl border border-slate-200 dark:border-neutral-800 rounded-[2.5rem] shadow-2xl p-6 sm:p-10 flex flex-col items-center transition-all duration-300">
+src/components/ClockApp.tsx:                    ? "bg-white dark:bg-neutral-800 text-blue-600 dark:text-blue-400 shadow-md transform scale-[1.02]" 
+src/components/ClockApp.tsx:                  <div className="text-6xl sm:text-7xl font-bold tracking-tighter mb-4 font-sans text-slate-800 dark:text-white drop-shadow-sm">
+src/components/ClockApp.tsx:                  <div className="text-5xl sm:text-7xl font-mono font-semibold tracking-tighter mb-12 text-slate-800 dark:text-white drop-shadow-sm">
+src/components/ClockApp.tsx:                      className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center shadow-xl shadow-blue-600/20 transition-transform active:scale-95"
+src/components/ClockApp.tsx:                      className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-slate-100 dark:bg-neutral-800 border-2 border-slate-200 dark:border-neutral-700 hover:bg-slate-200 dark:hover:bg-neutral-700 text-slate-700 dark:text-neutral-300 flex items-center justify-center transition-transform active:scale-95 shadow-md"
+src/components/ClockApp.tsx:                  <div className="text-6xl sm:text-7xl font-mono font-bold tracking-tighter mb-8 text-slate-800 dark:text-white drop-shadow-sm">
+src/components/ClockApp.tsx:                        className="px-4 py-2 bg-slate-100 dark:bg-neutral-800 hover:bg-slate-200 dark:hover:bg-neutral-700 text-slate-700 dark:text-neutral-300 rounded-xl text-sm font-semibold transition-colors border border-slate-200 dark:border-neutral-700 shadow-sm"
+src/components/ClockApp.tsx:                      className="w-16 h-12 bg-slate-100 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 rounded-xl text-center font-mono font-bold text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 shadow-inner"
+src/components/ClockApp.tsx:                      className="w-16 h-12 bg-slate-100 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 rounded-xl text-center font-mono font-bold text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 shadow-inner"
+src/components/ClockApp.tsx:                      className="w-16 h-12 bg-slate-100 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 rounded-xl text-center font-mono font-bold text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 shadow-inner"
+src/components/ClockApp.tsx:                      className="ml-2 px-4 h-12 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-500 transition-colors shadow-md active:scale-95"
+src/components/ClockApp.tsx:                      className="w-16 h-16 rounded-full bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center shadow-lg transition-transform active:scale-95"
+src/components/ClockApp.tsx:                      className="w-16 h-16 rounded-full bg-slate-100 dark:bg-neutral-800 hover:bg-slate-200 dark:hover:bg-neutral-700 border border-slate-200 dark:border-neutral-700 text-slate-700 dark:text-neutral-300 flex items-center justify-center shadow-md transition-transform active:scale-95"
+src/components/SpaceInvadersGame.tsx:    <div className="flex flex-col h-full bg-neutral-100 dark:bg-neutral-900 w-full relative">
+src/components/SpaceInvadersGame.tsx:          className="p-2 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded-full text-neutral-600 dark:text-neutral-400 transition-colors"
+src/components/SpaceInvadersGame.tsx:        <h2 className="text-lg font-bold text-neutral-900 dark:text-white">Space Invaders</h2>
+src/components/SpaceInvadersGame.tsx:        <div className="relative bg-neutral-200 dark:bg-neutral-900 p-2 rounded-xl shadow-2xl border-4 border-neutral-300 dark:border-neutral-800">
+src/components/SpaceInvadersGame.tsx:            <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center rounded-xl backdrop-blur-sm z-10">
+src/components/SpaceInvadersGame.tsx:              {gameOver && <div className="text-white text-2xl font-bold mb-4 text-center">Game Over<br/><span className="text-lg text-blue-400">Score: {score}</span></div>}
+src/components/SpaceInvadersGame.tsx:                className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-full font-bold shadow-lg transition-transform hover:scale-105 active:scale-95"
+src/components/SpaceInvadersGame.tsx:            className="w-16 h-16 bg-red-500 text-white rounded-full flex items-center justify-center select-none font-bold"
+src/components/SecretNotesInterface.tsx:      <header className="p-4 flex items-center justify-between border-b border-red-200 dark:border-red-900/30 bg-white dark:bg-neutral-900">
+src/components/SecretNotesInterface.tsx:        <button onClick={onBackToNotes} className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-full text-red-500 transition-colors">
+src/components/SecretNotesInterface.tsx:            <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="bg-white dark:bg-neutral-900 rounded-xl p-6 border border-red-200 dark:border-red-900/50 shadow-sm">
+src/components/SecretNotesInterface.tsx:                className="w-full bg-transparent text-xl font-semibold text-neutral-900 dark:text-white border-b border-red-200 dark:border-red-900/50 pb-2 focus:outline-none focus:border-red-500 mb-4"
+src/components/SecretNotesInterface.tsx:                <button onClick={() => setIsFormOpen(false)} className="px-4 py-2 text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-xl transition-all">
+src/components/SecretNotesInterface.tsx:                <button onClick={handleSave} className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-xl shadow-md transition-all">
+src/components/SecretNotesInterface.tsx:              <motion.div key={note.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-white dark:bg-neutral-900 rounded-xl p-6 border border-red-200 dark:border-red-900/30 shadow-sm">
+src/components/SecretNotesInterface.tsx:                  <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">{note.title}</h3>
+src/components/SecretNotesInterface.tsx:                    <button onClick={() => { setEditingNote(note); setIsFormOpen(true); }} className="p-2 text-blue-600 dark:text-blue-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-full"><Edit3 className="w-4 h-4" /></button>
+src/components/SecretNotesInterface.tsx:                    <button onClick={() => handleDelete(note.id)} className="p-2 text-red-600 dark:text-red-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-full"><Trash2 className="w-4 h-4" /></button>
+src/components/SecretNotesInterface.tsx:          className="absolute bottom-8 right-8 w-14 h-14 bg-red-600 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-red-500 hover:scale-105 transition-all"
+src/components/AppLauncher.tsx:            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-md"
+src/components/AppLauncher.tsx:            className="fixed bottom-0 left-0 right-0 z-50 h-[85vh] overflow-y-auto rounded-t-[2rem] sm:rounded-t-[3rem] p-6 sm:p-10 bg-white dark:bg-neutral-900 border-t border-neutral-200 dark:border-neutral-800 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] dark:shadow-[0_-10px_40px_rgba(0,0,0,0.5)]"
+src/components/AppLauncher.tsx:                <h2 className="text-3xl font-semibold text-neutral-900 dark:text-white">{t.menu}</h2>
+src/components/AppLauncher.tsx:                  className="p-3 text-neutral-500 hover:text-neutral-900 bg-neutral-100 hover:bg-neutral-200 dark:text-neutral-400 dark:hover:text-white dark:bg-neutral-800 dark:hover:bg-neutral-700 rounded-full transition-colors"
+src/components/AppLauncher.tsx:                              <div className="w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center bg-neutral-100 text-neutral-600 border-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 rounded-2xl group-hover:scale-105 group-hover:bg-blue-600 group-hover:text-white group-hover:shadow-[0_0_20px_rgba(37,99,235,0.4)] transition-all duration-300 border dark:border-neutral-700/50 group-hover:border-blue-500/50">
+src/App.tsx:            <div className="fixed inset-0 z-40 flex items-center justify-center p-4 sm:p-6 bg-black/40 backdrop-blur-sm">
+src/App.tsx:                className="w-full max-w-5xl h-[85vh] sm:h-[90vh] bg-white dark:bg-neutral-900 rounded-3xl shadow-2xl overflow-hidden flex flex-col relative"
+src/App.tsx:              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+src/App.tsx:              className="relative w-full max-w-sm bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700/50 rounded-2xl shadow-2xl p-6 overflow-y-auto max-h-[80vh]"
+src/App.tsx:              <div className="flex justify-between items-center mb-6 border-b border-neutral-200 dark:border-neutral-700 pb-4 sticky top-0 bg-white dark:bg-neutral-800 z-10">
+src/App.tsx:                <h2 className="text-xl font-bold text-neutral-900 dark:text-white">
+src/App.tsx:                <li key="secret-notes" className="flex flex-col bg-neutral-100 dark:bg-neutral-900 p-3 rounded-xl border border-neutral-200 dark:border-neutral-700">
+src/App.tsx:                <li key="secret-codes" className="flex flex-col bg-neutral-100 dark:bg-neutral-900 p-3 rounded-xl border border-neutral-200 dark:border-neutral-700">
+src/App.tsx:                <li key="tetris" className="flex flex-col bg-neutral-100 dark:bg-neutral-900 p-3 rounded-xl border border-neutral-200 dark:border-neutral-700">
+src/App.tsx:                <li key="space-invaders" className="flex flex-col bg-neutral-100 dark:bg-neutral-900 p-3 rounded-xl border border-neutral-200 dark:border-neutral-700">
+src/App.tsx:                <li key="evolution" className="flex flex-col bg-neutral-100 dark:bg-neutral-900 p-3 rounded-xl border border-neutral-200 dark:border-neutral-700">

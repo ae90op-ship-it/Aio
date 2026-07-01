@@ -21,6 +21,9 @@ export function TextNoteApp({ lang, onBack, initialData, onSaveNote }: Props) {
     }
   };
 
+  const wordCount = content.trim() ? content.trim().split(/\s+/).length : 0;
+  const charCount = content.length;
+
   return (
     <div className="flex flex-col h-full bg-neutral-50 dark:bg-neutral-900 w-full relative">
       <header className="p-4 flex items-center justify-between border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950">
@@ -46,7 +49,7 @@ export function TextNoteApp({ lang, onBack, initialData, onSaveNote }: Props) {
         </div>
       </header>
 
-      <main className="flex-1 p-6 flex flex-col gap-4">
+      <main className="flex-1 p-6 flex flex-col gap-4 overflow-y-auto">
         <input
           type="text"
           value={title}
@@ -61,6 +64,13 @@ export function TextNoteApp({ lang, onBack, initialData, onSaveNote }: Props) {
           className="w-full flex-1 bg-transparent text-lg text-neutral-700 dark:text-neutral-300 border-none focus:outline-none focus:ring-0 resize-none"
         />
       </main>
+
+      <footer className="p-2 px-4 flex items-center justify-between border-t border-neutral-200 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-950 text-xs text-neutral-500 dark:text-neutral-400">
+        <div className="flex gap-4">
+          <span>{wordCount} {lang === 'ar' ? 'كلمات' : 'words'}</span>
+          <span>{charCount} {lang === 'ar' ? 'حروف' : 'characters'}</span>
+        </div>
+      </footer>
     </div>
   );
 }
