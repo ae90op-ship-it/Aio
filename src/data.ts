@@ -113,24 +113,13 @@ export const APPS: AppData[] = [
   },
   {
     id: "videoplayer",
-    name: { ar: "مشغل الفيديو", en: "Video Player", ja: "ビデオプレーヤー" },
+    name: { ar: "الفيديو", en: "Video", ja: "ビデオ" },
     category: "MEDIA",
     icon: "PlaySquare",
     description: {
-      ar: "تشغيل الفيديوهات بجميع الصيغ.",
-      en: "Play videos in all formats.",
-      ja: "すべてのフォーマットのビデオを再生。",
-    },
-  },
-  {
-    id: "videoeditor",
-    name: { ar: "محرر الفيديو", en: "Video Editor", ja: "ビデオエディタ" },
-    category: "MEDIA",
-    icon: "Film",
-    description: {
-      ar: "قص وتعديل وإضافة تأثيرات للفيديو.",
-      en: "Trim, edit, and add effects to videos.",
-      ja: "ビデオのトリミング、編集、エフェクトの追加。",
+      ar: "محرر ومشغل فيديوهات متقدم.",
+      en: "Advanced video player and editor.",
+      ja: "高度なビデオプレーヤーおよびエディタ。",
     },
   },
   {

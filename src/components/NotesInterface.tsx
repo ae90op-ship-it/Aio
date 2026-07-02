@@ -167,7 +167,7 @@ export function NotesInterface({
     if (appId === "drawing") {
       return (
         <div className="mt-3 bg-white dark:bg-neutral-900 rounded-lg p-2 border border-neutral-200 dark:border-neutral-700">
-          <img src={appData as string} alt="Drawing preview" className="w-full max-h-64 object-contain rounded-md" />
+          <img src={appData as unknown as string} alt="Drawing preview" className="w-full max-h-64 object-contain rounded-md" />
         </div>
       );
     }

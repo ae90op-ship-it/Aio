@@ -14,7 +14,14 @@ export function SecretNotesInterface({ lang, theme, onBackToNotes }: Props) {
   const t = translations[lang];
   const [secretNotes, setSecretNotes] = useState<Note[]>(() => {
     const saved = localStorage.getItem('secretNotes');
-    return saved ? JSON.parse(saved) : [];
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        return [];
+      }
+    }
+    return [];
   });
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<Note | null>(null);

@@ -15,13 +15,22 @@ export function CalendarModal({ lang, isOpen, onClose }: Props) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewType, setViewType] = useState<'day' | 'month'>('day');
   
-  const [calendarNotes, setCalendarNotes] = useState<Record<string, string>>(() => {
-    const saved = localStorage.getItem('calendarNotes');
-    return saved ? JSON.parse(saved) : {};
+  const [calendarNotes, setCalendarNotes] = useState<Record<string, {id: string, text: string}[]>>(() => {
+    const saved = localStorage.getItem('calendarNotesV2');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        return {};
+      }
+    }
+    return {};
   });
 
+  const [newMemo, setNewMemo] = useState('');
+
   useEffect(() => {
-    localStorage.setItem('calendarNotes', JSON.stringify(calendarNotes));
+    localStorage.setItem('calendarNotesV2', JSON.stringify(calendarNotes));
   }, [calendarNotes]);
 
   const getDateKey = (d: Date) => {
@@ -109,8 +118,9 @@ export function CalendarModal({ lang, isOpen, onClose }: Props) {
     for (let d = 1; d <= daysInMonth; d++) {
       const date = new Date(year, month, d);
       const isToday = getDateKey(date) === getDateKey(new Date());
-      const hasNote = !!calendarNotes[getDateKey(date)];
-      const noteContent = calendarNotes[getDateKey(date)];
+      const memos = calendarNotes[getDateKey(date)];
+      const hasNote = memos && memos.length > 0;
+      const noteContent = hasNote ? `${memos.length} ${lang === 'ar' ? 'مذكرات' : 'memos'}` : '';
 
       grid.push(
         <div 
@@ -205,37 +215,60 @@ export function CalendarModal({ lang, isOpen, onClose }: Props) {
 
                   <div className="w-full h-px bg-neutral-200 dark:bg-neutral-800 my-4" />
 
-                  <div className="text-left flex flex-col h-[200px]" dir="auto">
+                  <div className="text-left flex flex-col h-[280px]" dir="auto">
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="text-sm text-neutral-500 dark:text-neutral-400 font-medium flex items-center gap-2">
                         <CalendarIcon className="w-4 h-4" />
                         {lang === 'ar' ? 'مركز التذكيرات السريعة' : 'Quick-Memo Reminder Hub'}
                       </h3>
-                      {calendarNotes[currentKey] && (
+                      {(calendarNotes[currentKey]?.length || 0) > 0 && (
                         <span className="text-[10px] bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400 px-2 py-1 rounded-full font-bold">
-                          {lang === 'ar' ? 'نشط' : 'Active'}
+                          {calendarNotes[currentKey].length} {lang === 'ar' ? 'مذكرات' : 'Memos'}
                         </span>
                       )}
                     </div>
-                    <div className="relative flex-1 group">
-                      <textarea
-                        value={calendarNotes[currentKey] || ''}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          if (val) {
-                            setCalendarNotes({ ...calendarNotes, [currentKey]: val });
-                          } else {
+                    
+                    <div className="flex-1 overflow-y-auto space-y-2 pr-1 mb-3 scrollbar-hide">
+                      {(!calendarNotes[currentKey] || calendarNotes[currentKey].length === 0) ? (
+                         <div className="h-full flex items-center justify-center text-xs text-neutral-400 dark:text-neutral-500 italic">
+                           {lang === 'ar' ? 'لا توجد تذكيرات لهذا اليوم.' : 'No reminders for this day.'}
+                         </div>
+                      ) : (
+                        calendarNotes[currentKey].map(memo => (
+                          <div key={memo.id} className="relative group p-3 bg-white dark:bg-neutral-800/80 border border-neutral-200 dark:border-neutral-700 rounded-xl shadow-sm hover:shadow-md transition-all flex justify-between items-start">
+                            <p className="text-sm text-neutral-800 dark:text-neutral-200 whitespace-pre-wrap flex-1">{memo.text}</p>
+                            <button 
+                              onClick={() => {
+                                const newNotes = { ...calendarNotes };
+                                newNotes[currentKey] = newNotes[currentKey].filter(m => m.id !== memo.id);
+                                if (newNotes[currentKey].length === 0) delete newNotes[currentKey];
+                                setCalendarNotes(newNotes);
+                              }}
+                              className="opacity-0 group-hover:opacity-100 p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-all shrink-0 ml-2"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      <input
+                        value={newMemo}
+                        onChange={(e) => setNewMemo(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && newMemo.trim()) {
                             const newNotes = { ...calendarNotes };
-                            delete newNotes[currentKey];
+                            if (!newNotes[currentKey]) newNotes[currentKey] = [];
+                            newNotes[currentKey].push({ id: Date.now().toString(), text: newMemo.trim() });
                             setCalendarNotes(newNotes);
+                            setNewMemo('');
                           }
                         }}
-                        placeholder={lang === 'ar' ? "أضف ملاحظة أو تذكير مخصص لهذا اليوم..." : "Add a custom note or reminder for this day..."}
-                        className="w-full h-full p-4 bg-white dark:bg-neutral-800/80 border border-neutral-300 dark:border-neutral-700 rounded-2xl text-neutral-900 dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-sm group-hover:shadow-md"
+                        placeholder={lang === 'ar' ? "إضافة مذكرة جديدة (اضغط Enter)" : "Add new memo (Press Enter)"}
+                        className="flex-1 px-4 py-2 bg-neutral-100 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 rounded-xl text-sm text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                       />
-                      <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                        <CalendarIcon className="w-5 h-5 text-neutral-300 dark:text-neutral-600" />
-                      </div>
                     </div>
                   </div>
                 </div>

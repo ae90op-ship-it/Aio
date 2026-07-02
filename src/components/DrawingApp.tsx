@@ -24,7 +24,8 @@ import {
   Triangle,
   Maximize2,
   Minimize2,
-  Focus
+  Focus,
+  Palette
 } from "lucide-react";
 
 interface Props {
@@ -57,6 +58,10 @@ export function DrawingApp({ lang, onBack, initialData, onSaveNote }: Props) {
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [isZenMode, setIsZenMode] = useState(false);
   const [zenHovered, setZenHovered] = useState(false);
+  const [showLayers, setShowLayers] = useState(false);
+
+  // Canvas Global State
+  const [canvasBg, setCanvasBg] = useState("#FFFFFF");
 
   // Layers & History
   const [layers, setLayers] = useState<Layer[]>([
@@ -163,7 +168,7 @@ export function DrawingApp({ lang, onBack, initialData, onSaveNote }: Props) {
     });
     observer.observe(container);
     return () => observer.disconnect();
-  }, [layers, currentElement, pan, zoom, showGrid]);
+  }, [layers, currentElement, pan, zoom, showGrid, canvasBg]);
 
   const drawShapePath = (ctx: CanvasRenderingContext2D, type: string, start: Point, end: Point) => {
     const width = end.x - start.x;
@@ -194,6 +199,10 @@ export function DrawingApp({ lang, onBack, initialData, onSaveNote }: Props) {
     if (canvas.height !== container.clientHeight) canvas.height = container.clientHeight;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw Background
+    ctx.fillStyle = canvasBg;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     ctx.save();
     ctx.translate(pan.x, pan.y);
@@ -202,7 +211,9 @@ export function DrawingApp({ lang, onBack, initialData, onSaveNote }: Props) {
     // Draw Grid
     if (showGrid) {
       ctx.save();
-      ctx.strokeStyle = "rgba(150, 150, 150, 0.2)";
+      // Adjust grid color based on background lightness
+      const isDarkBg = parseInt(canvasBg.slice(1, 3), 16) + parseInt(canvasBg.slice(3, 5), 16) + parseInt(canvasBg.slice(5, 7), 16) < 382;
+      ctx.strokeStyle = isDarkBg ? "rgba(255, 255, 255, 0.1)" : "rgba(150, 150, 150, 0.2)";
       ctx.lineWidth = 1 / zoom;
       const step = 50;
       const startX = -pan.x / zoom;
@@ -275,7 +286,7 @@ export function DrawingApp({ lang, onBack, initialData, onSaveNote }: Props) {
     }
 
     ctx.restore();
-  }, [layers, currentElement, pan, zoom, activeLayerId, showGrid]);
+  }, [layers, currentElement, pan, zoom, activeLayerId, showGrid, canvasBg]);
 
   useEffect(() => {
     renderCanvas();
@@ -400,7 +411,7 @@ export function DrawingApp({ lang, onBack, initialData, onSaveNote }: Props) {
       tempCanvas.height = canvas.height;
       const ctx = tempCanvas.getContext("2d");
       if (ctx) {
-        ctx.fillStyle = "#ffffff";
+        ctx.fillStyle = canvasBg;
         ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
         ctx.drawImage(canvas, 0, 0);
         
@@ -420,7 +431,7 @@ export function DrawingApp({ lang, onBack, initialData, onSaveNote }: Props) {
       tempCanvas.height = canvasRef.current.height;
       const ctx = tempCanvas.getContext("2d");
       if (ctx) {
-        ctx.fillStyle = "#ffffff";
+        ctx.fillStyle = canvasBg;
         ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
         ctx.drawImage(canvasRef.current, 0, 0);
         const dataUrl = tempCanvas.toDataURL("image/png");
@@ -507,12 +518,28 @@ export function DrawingApp({ lang, onBack, initialData, onSaveNote }: Props) {
         >
           
           <div className="flex items-center gap-3">
-            <input 
-              type="color" 
-              value={color} 
-              onChange={e => setColor(e.target.value)}
-              className="w-8 h-8 rounded-full border-2 border-neutral-200 dark:border-neutral-700 cursor-pointer overflow-hidden p-0"
-            />
+            <div className="relative group flex items-center">
+              <input 
+                type="color" 
+                value={color} 
+                onChange={e => setColor(e.target.value)}
+                className="w-8 h-8 rounded-full border-2 border-neutral-200 dark:border-neutral-700 cursor-pointer overflow-hidden p-0"
+                title="Brush Color"
+              />
+            </div>
+            <div className="relative group flex items-center">
+              <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+                <Palette className="w-3 h-3 text-black/50 mix-blend-difference" />
+              </div>
+              <input 
+                type="color" 
+                value={canvasBg} 
+                onChange={e => setCanvasBg(e.target.value)}
+                className="w-8 h-8 rounded-full border-2 border-neutral-200 dark:border-neutral-700 cursor-pointer overflow-hidden p-0"
+                title="Canvas Background"
+              />
+            </div>
+            
             <div className="h-6 w-[1px] bg-neutral-300 dark:bg-neutral-700" />
             
             <div className="flex flex-col gap-1 w-32">
@@ -581,7 +608,11 @@ export function DrawingApp({ lang, onBack, initialData, onSaveNote }: Props) {
             <button onClick={() => setShowGrid(!showGrid)} className={`p-2 rounded-lg transition-colors ${showGrid ? "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400" : "hover:bg-neutral-100 dark:hover:bg-neutral-800"}`} title="Toggle Grid">
               <Grid className="w-4 h-4" />
             </button>
-            <button onClick={downloadCanvas} className="p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors" title="Export PNG">
+            <button onClick={() => setShowLayers(!showLayers)} className={`flex items-center gap-2 p-2 px-3 rounded-lg transition-colors ${showLayers ? "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400" : "hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-400"}`} title="Toggle Layers">
+              <Layers className="w-4 h-4" />
+              <span className="text-sm font-medium hidden md:inline">{lang === 'ar' ? 'الطبقات' : 'Layers'}</span>
+            </button>
+            <button onClick={downloadCanvas} className="p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-600 dark:text-neutral-400" title="Export PNG">
               <Download className="w-4 h-4" />
             </button>
             {onSaveNote && (
@@ -598,7 +629,7 @@ export function DrawingApp({ lang, onBack, initialData, onSaveNote }: Props) {
         >
           <canvas
             ref={canvasRef}
-            className={`absolute inset-0 block bg-white dark:bg-neutral-950 touch-none ${tool === "pan" ? (isInteracting ? "cursor-grabbing" : "cursor-grab") : "cursor-crosshair"}`}
+            className={`absolute inset-0 block touch-none ${tool === "pan" ? (isInteracting ? "cursor-grabbing" : "cursor-grab") : "cursor-crosshair"}`}
             onMouseDown={handlePointerDown}
             onMouseMove={handlePointerMove}
             onMouseUp={handlePointerUp}
@@ -611,55 +642,57 @@ export function DrawingApp({ lang, onBack, initialData, onSaveNote }: Props) {
       </div>
 
       {/* Right Layers Panel */}
-      <div 
-        className={`w-64 border-l border-neutral-200 dark:border-neutral-800 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl flex flex-col z-20 shadow-xl transition-all duration-300 ${showUI ? 'translate-x-0' : 'translate-x-full absolute right-0 h-full'}`}
-        onMouseLeave={() => isZenMode && setZenHovered(false)}
-      >
-        <div className="p-4 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between">
-          <h3 className="font-bold flex items-center gap-2">
-            <Layers className="w-5 h-5 text-blue-600" />
-            Layers
-          </h3>
-          <button onClick={addLayer} className="p-1.5 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-md transition-colors">
-            <Plus className="w-4 h-4" />
-          </button>
-        </div>
+      {showLayers && (
+        <div 
+          className="w-64 border-l border-neutral-200 dark:border-neutral-800 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl flex flex-col z-20 shadow-xl transition-all duration-300"
+          onMouseLeave={() => isZenMode && setZenHovered(false)}
+        >
+          <div className="p-4 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between">
+            <h3 className="font-bold flex items-center gap-2">
+              <Layers className="w-5 h-5 text-blue-600" />
+              {lang === 'ar' ? 'الطبقات' : 'Layers'}
+            </h3>
+            <button onClick={addLayer} className="p-1.5 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-md transition-colors">
+              <Plus className="w-4 h-4" />
+            </button>
+          </div>
 
-        <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-2">
-          {layers.map((layer) => (
-            <div 
-              key={layer.id} 
-              className={`p-3 rounded-xl border transition-all ${activeLayerId === layer.id ? "border-blue-500 bg-blue-50 dark:bg-blue-900/10 shadow-sm" : "border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 hover:border-neutral-300 dark:hover:border-neutral-700"}`}
-              onClick={() => setActiveLayerId(layer.id)}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-semibold truncate flex-1">{layer.name}</span>
-                <div className="flex items-center gap-1">
-                  <button onClick={(e) => { e.stopPropagation(); toggleLayerVisibility(layer.id); }} className="p-1 text-neutral-500 hover:text-neutral-900 dark:hover:text-white">
-                    {layer.visible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4 opacity-50" />}
-                  </button>
-                  <button onClick={(e) => { e.stopPropagation(); deleteLayer(layer.id); }} className="p-1 text-neutral-500 hover:text-red-500">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+          <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-2">
+            {layers.map((layer) => (
+              <div 
+                key={layer.id} 
+                className={`p-3 rounded-xl border transition-all ${activeLayerId === layer.id ? "border-blue-500 bg-blue-50 dark:bg-blue-900/10 shadow-sm" : "border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 hover:border-neutral-300 dark:hover:border-neutral-700"}`}
+                onClick={() => setActiveLayerId(layer.id)}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-semibold truncate flex-1">{layer.name}</span>
+                  <div className="flex items-center gap-1">
+                    <button onClick={(e) => { e.stopPropagation(); toggleLayerVisibility(layer.id); }} className="p-1 text-neutral-500 hover:text-neutral-900 dark:hover:text-white">
+                      {layer.visible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4 opacity-50" />}
+                    </button>
+                    <button onClick={(e) => { e.stopPropagation(); deleteLayer(layer.id); }} className="p-1 text-neutral-500 hover:text-red-500">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                  <span className="text-[10px] uppercase text-neutral-500 w-12">Opacity</span>
+                  <input 
+                    type="range" 
+                    min="0" max="1" step="0.05"
+                    value={layer.opacity}
+                    onChange={(e) => updateLayerOpacity(layer.id, Number(e.target.value))}
+                    onMouseUp={commitLayerOpacity}
+                    onTouchEnd={commitLayerOpacity}
+                    className="flex-1 h-1 bg-neutral-200 dark:bg-neutral-700 rounded-full appearance-none accent-neutral-600 dark:accent-neutral-400"
+                  />
                 </div>
               </div>
-              
-              <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
-                <span className="text-[10px] uppercase text-neutral-500 w-12">Opacity</span>
-                <input 
-                  type="range" 
-                  min="0" max="1" step="0.05"
-                  value={layer.opacity}
-                  onChange={(e) => updateLayerOpacity(layer.id, Number(e.target.value))}
-                  onMouseUp={commitLayerOpacity}
-                  onTouchEnd={commitLayerOpacity}
-                  className="flex-1 h-1 bg-neutral-200 dark:bg-neutral-700 rounded-full appearance-none accent-neutral-600 dark:accent-neutral-400"
-                />
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
     </div>
   );

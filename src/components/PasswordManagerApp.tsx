@@ -20,7 +20,22 @@ interface PasswordEntry {
 
 export function PasswordManagerApp({ lang, theme, onBack, onSaveNote }: Props) {
   const t = translations[lang];
-  const [passwords, setPasswords] = useState<PasswordEntry[]>([]);
+  const [passwords, setPasswords] = useState<PasswordEntry[]>(() => {
+    const saved = localStorage.getItem('passwordManagerData');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        return [];
+      }
+    }
+    return [];
+  });
+  
+  React.useEffect(() => {
+    localStorage.setItem('passwordManagerData', JSON.stringify(passwords));
+  }, [passwords]);
+
   const [search, setSearch] = useState('');
   const [showAdd, setShowAdd] = useState(false);
   const [visiblePasswords, setVisiblePasswords] = useState<Set<string>>(new Set());

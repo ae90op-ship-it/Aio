@@ -15,7 +15,6 @@ import { CalendarModal } from "./components/CalendarModal";
 import { ImageResizerApp } from "./components/ImageResizerApp";
 import { GalleryApp } from "./components/GalleryApp";
 import { VideoPlayerApp } from "./components/VideoPlayerApp";
-import { VideoEditorApp } from "./components/VideoEditorApp";
 import { AudioEditorApp } from "./components/AudioEditorApp";
 import { TextNoteApp } from "./components/TextNoteApp";
 import { SecretNotesInterface } from "./components/SecretNotesInterface";
@@ -94,11 +93,25 @@ export default function App() {
   const [activeAppId, setActiveAppId] = useState<AppId | null>(null);
   const [notes, setNotes] = useState<Note[]>(() => {
     const saved = localStorage.getItem("notes");
-    return saved ? JSON.parse(saved) : [];
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        return [];
+      }
+    }
+    return [];
   });
   const [trashedNotes, setTrashedNotes] = useState<TrashedNote[]>(() => {
     const saved = localStorage.getItem("trashedNotes");
-    return saved ? JSON.parse(saved) : [];
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        return [];
+      }
+    }
+    return [];
   });
 
   useEffect(() => {
@@ -293,13 +306,13 @@ export default function App() {
 
         <AnimatePresence>
           {appState !== "MAIN_NOTES" && (
-            <div className="fixed inset-0 z-40 flex items-center justify-center p-4 sm:p-6 bg-black/40 backdrop-blur-sm">
+            <div className={`fixed inset-0 z-40 flex items-center justify-center bg-black/40 backdrop-blur-sm ${appState === "PASSWORDS_OPEN" || appState === "CALCULATOR_OPEN" ? "p-0" : "p-4 sm:p-6"}`}>
               <motion.div
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
                 transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                className="w-full max-w-5xl h-[85vh] sm:h-[90vh] bg-white dark:bg-neutral-900 rounded-3xl shadow-2xl overflow-hidden flex flex-col relative"
+                className={appState === "PASSWORDS_OPEN" || appState === "CALCULATOR_OPEN" ? "w-full h-full bg-white dark:bg-neutral-900 flex flex-col relative overflow-hidden" : "w-full max-w-5xl h-[85vh] sm:h-[90vh] bg-white dark:bg-neutral-900 rounded-3xl shadow-2xl overflow-hidden flex flex-col relative"}
               >
                 {appState === "CLOCK_OPEN" && (
                   <ClockApp
@@ -378,9 +391,6 @@ export default function App() {
                 )}
                 {appState === "VIDEOPLAYER_OPEN" && (
                   <VideoPlayerApp lang={lang} onExit={handleBackToNotes} onSaveNote={(title, data) => handleSaveAppNote(title, data, "videoplayer")} />
-                )}
-                {appState === "VIDEOEDITOR_OPEN" && (
-                  <VideoEditorApp lang={lang} onExit={handleBackToNotes} onSaveNote={(title, data) => handleSaveAppNote(title, data, "videoeditor")} />
                 )}
                 {appState === "AUDIOEDITOR_OPEN" && (
                   <AudioEditorApp lang={lang} onExit={handleBackToNotes} onSaveNote={(title, data) => handleSaveAppNote(title, data, "audioeditor")} />

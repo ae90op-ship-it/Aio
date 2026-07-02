@@ -9,7 +9,10 @@ interface Props {
 }
 
 export function AudioEditorApp({ lang, onExit, onSaveNote }: Props) {
-  const [audioSrc, setAudioSrc] = useState<string | null>(null);
+  const [audioTracks, setAudioTracks] = useState<{name: string, url: string}[]>([]);
+  const [activeTrackIndex, setActiveTrackIndex] = useState<number>(0);
+  const audioSrc = audioTracks[activeTrackIndex]?.url || null;
+
   const [duration, setDuration] = useState(0);
   const [startTime, setStartTime] = useState(0);
   const [endTime, setEndTime] = useState(0);
@@ -18,9 +21,16 @@ export function AudioEditorApp({ lang, onExit, onSaveNote }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setAudioSrc(URL.createObjectURL(file));
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      const newTracks = Array.from(files).map(file => ({
+        name: file.name,
+        url: URL.createObjectURL(file)
+      }));
+      setAudioTracks(prev => [...prev, ...newTracks]);
+      if (audioTracks.length === 0) {
+        setActiveTrackIndex(0);
+      }
     }
   };
 
@@ -35,9 +45,9 @@ export function AudioEditorApp({ lang, onExit, onSaveNote }: Props) {
   useEffect(() => {
     if (audioRef.current && audioSrc) {
       const handleTimeUpdate = () => {
-        if (audioRef.current!.currentTime > endTime) {
-          audioRef.current!.currentTime = startTime;
-          audioRef.current!.pause();
+        if (audioRef.current && audioRef.current.currentTime > endTime) {
+          audioRef.current.currentTime = startTime;
+          audioRef.current.pause();
         }
       };
       audioRef.current.addEventListener('timeupdate', handleTimeUpdate);
@@ -73,7 +83,7 @@ export function AudioEditorApp({ lang, onExit, onSaveNote }: Props) {
               <Save className="w-5 h-5" />
             </button>
           )}
-          <input type="file" accept="audio/*" className="hidden" ref={fileInputRef} onChange={handleUpload} />
+          <input type="file" accept="audio/*" multiple className="hidden" ref={fileInputRef} onChange={handleUpload} />
           <button onClick={() => fileInputRef.current?.click()} className="p-2 text-pink-500 hover:bg-pink-50 dark:hover:bg-pink-900/30 rounded-full">
             <Upload className="w-5 h-5" />
           </button>
@@ -81,7 +91,26 @@ export function AudioEditorApp({ lang, onExit, onSaveNote }: Props) {
       </header>
 
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
-        <div className="w-full border-r border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-6 flex flex-col gap-6 overflow-y-auto max-w-2xl mx-auto shadow-xl">
+        {audioTracks.length > 0 && (
+          <div className="w-full md:w-64 border-r border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 overflow-y-auto">
+            <div className="p-4 border-b border-neutral-100 dark:border-neutral-800 font-semibold text-sm">
+              {lang === 'ar' ? 'المقاطع الصوتية' : 'Audio Tracks'}
+            </div>
+            <div className="flex flex-col">
+              {audioTracks.map((track, i) => (
+                <button
+                  key={i}
+                  onClick={() => setActiveTrackIndex(i)}
+                  className={`p-3 text-left text-sm truncate border-b border-neutral-100 dark:border-neutral-800/50 transition-colors ${i === activeTrackIndex ? 'bg-pink-50 dark:bg-pink-900/20 text-pink-700 dark:text-pink-300 font-medium' : 'hover:bg-neutral-50 dark:hover:bg-neutral-900/50 text-neutral-600 dark:text-neutral-400'}`}
+                >
+                  {track.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        
+        <div className="flex-1 bg-white dark:bg-neutral-950 p-6 flex flex-col gap-6 overflow-y-auto shadow-xl">
           {audioSrc ? (
             <div className="space-y-8">
               <div className="bg-neutral-100 dark:bg-neutral-900 p-6 rounded-2xl flex flex-col items-center">
